@@ -11,6 +11,7 @@ let RegisterScreen = null;
 let PerformanceScreen = null;
 let SimulationSetupScreen = null;
 let APITestScreen = null;
+let SimulationGameScreen = null;
 
 try {
   StockListScreen = require('./screens/StockListScreen').default;
@@ -47,6 +48,14 @@ try {
 } catch (error) {
   console.log('❌ APITestScreen 로드 실패:', error.message);
 }
+
+try {
+  SimulationGameScreen = require('./screens/SimulationGameScreen').default;
+  console.log('✅ SimulationGameScreen 로드 성공');
+} catch (error) {
+  console.log('❌ SimulationGameScreen 로드 실패:', error.message);
+}
+  
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('Login');
@@ -111,17 +120,17 @@ export default function App() {
         } else {
           Alert.alert('오류', 'SimulationSetupScreen을 로드할 수 없습니다.');
         }
+
       } else if (screenName === 'SimulationProgress') {
         console.log('🎮 시뮬레이션 진행 화면으로 이동 중...');
-        Alert.alert(
-          '🎮 시뮬레이션 시작!',
-          '시뮬레이션 게임 화면이 곧 구현됩니다!\n\n현재 설정:\n• 기간: 2023년\n• 초기 자금: $100,000\n• 난이도: 쉬움',
-          [
-            { text: '설정 변경', onPress: () => setCurrentScreen('SimulationSetup') },
-            { text: '메인으로', onPress: () => setCurrentScreen('MainDashboard') }
-          ]
-        );
-      } else if (screenName === 'APITest') {
+        if (SimulationGameScreen) {
+          setCurrentScreen('SimulationGame');
+        } else {
+          Alert.alert('오류', 'SimulationGameScreen을 로드할 수 없습니다.');
+        }
+      }
+
+      else if (screenName === 'APITest') {
         console.log('🧪 API 테스트 화면으로 이동 중...');
         if (APITestScreen) {
           setCurrentScreen('APITest');
@@ -202,6 +211,17 @@ export default function App() {
               <Text style={styles.errorText}>SimulationSetupScreen을 로드할 수 없습니다</Text>
             </View>
           );
+        }
+
+      case 'SimulationGame':
+        if (SimulationGameScreen) {
+          return <SimulationGameScreen navigation={mockNavigation} />;
+        } else {
+          return (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>SimulationGameScreen을 로드할 수 없습니다</Text>
+            </View>
+           );
         }
 
       default:

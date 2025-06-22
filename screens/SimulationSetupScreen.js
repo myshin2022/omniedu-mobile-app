@@ -1,113 +1,72 @@
-// screens/SimulationSetupScreen.js
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+// SimulationSetupScreen.js (시뮬레이션 데이터 완전 분리)
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ScrollView, 
   Alert,
-  Switch,
+  Switch 
 } from 'react-native';
 
-const SimulationSetupScreen = ({ navigation }) => {
-  const [startDate, setStartDate] = useState('2023-01-01');
-  const [endDate, setEndDate] = useState('2023-12-31');
-  const [tradingInterval, setTradingInterval] = useState('monthly'); // daily, weekly, monthly, quarterly
-  const [initialAmount, setInitialAmount] = useState(100000);
-  const [difficulty, setDifficulty] = useState('normal'); // easy, normal, hard
-  const [enableAI, setEnableAI] = useState(true);
+// 🎮 시뮬레이션 전용 깨끗한 데이터
+const SIMULATION_INITIAL_DATA = {
+  balance: 100000,
+  portfolio: {},
+  transactions: [],
+  total_asset: 100000,
+  user_id: 'simulation_user',
+  username: 'simulation_mode'
+};
 
-  const startDateOptions = [
-    { label: '2023년 1월', value: '2023-01-01', period: '1년' },
-    { label: '2022년 1월', value: '2022-01-01', period: '2년' },
-    { label: '2021년 1월', value: '2021-01-01', period: '3년' },
-    { label: '2020년 3월 (코로나)', value: '2020-03-01', period: '특별' },
-  ];
+export default function SimulationSetupScreen({ navigation }) {
+  const [config, setConfig] = useState({
+    startDate: '2023-01-01',
+    endDate: '2023-12-31',
+    initialAmount: 100000,
+    difficulty: 'normal',
+    tradingInterval: 'monthly',
+    enableAI: true,
+    totalSteps: '12'
+  });
 
-  const intervalOptions = [
-    {
-      id: 'daily',
-      label: '매일 거래',
-      description: '365회 거래 기회',
-      difficulty: '어려움',
-      color: '#dc3545'
-    },
-    {
-      id: 'weekly',
-      label: '매주 거래',
-      description: '52회 거래 기회',
-      difficulty: '보통',
-      color: '#ffc107'
-    },
-    {
-      id: 'monthly',
-      label: '매월 거래',
-      description: '12회 거래 기회',
-      difficulty: '쉬움',
-      color: '#28a745'
-    },
-    {
-      id: 'quarterly',
-      label: '분기별 거래',
-      description: '4회 거래 기회',
-      difficulty: '매우 쉬움',
-      color: '#007bff'
-    },
-  ];
+  // 🎮 시뮬레이션 전용 포트폴리오 상태
+  const [simulationPortfolio, setSimulationPortfolio] = useState(SIMULATION_INITIAL_DATA);
 
-  const difficultyOptions = [
-    {
-      id: 'easy',
-      label: '🟢 쉬움',
-      description: 'AI 조언 항상 표시, 힌트 제공',
-      features: ['전체 AI 분석', '시장 힌트', '위험 경고']
-    },
-    {
-      id: 'normal',
-      label: '🟡 보통',
-      description: 'AI 조언 선택적 표시',
-      features: ['기본 AI 분석', '시장 데이터', '일반 경고']
-    },
-    {
-      id: 'hard',
-      label: '🔴 어려움',
-      description: 'AI 조언 최소화, 실전과 동일',
-      features: ['최소 정보', '실시간 데이터만', '자력 판단']
-    }
-  ];
+  useEffect(() => {
+    console.log('🎮 시뮬레이션 설정 화면 로드됨');
+    console.log('🧹 시뮬레이션 데이터 초기화:', SIMULATION_INITIAL_DATA);
+    
+    // 시뮬레이션 모드에서는 항상 깨끗한 데이터로 시작
+    setSimulationPortfolio(SIMULATION_INITIAL_DATA);
+  }, []);
 
   const handleStartSimulation = () => {
-    const selectedInterval = intervalOptions.find(opt => opt.id === tradingInterval);
-    const selectedStart = startDateOptions.find(opt => opt.value === startDate);
+    console.log('🎮 시뮬레이션 시작 - 설정:', config);
+    console.log('💰 시뮬레이션 초기 자금:', simulationPortfolio.balance);
+    console.log('📊 시뮬레이션 초기 포트폴리오:', simulationPortfolio.portfolio);
 
     Alert.alert(
-      '시뮬레이션 시작',
+      '🎮 시뮬레이션 시작!',
       `설정 확인:
-      
-📅 기간: ${selectedStart.label} ~ ${endDate}
-⏰ 거래 주기: ${selectedInterval.label}
-💰 초기 자금: $${initialAmount.toLocaleString()}
-🎯 난이도: ${difficultyOptions.find(d => d.id === difficulty).label}
-🤖 AI 코치: ${enableAI ? '활성화' : '비활성화'}
+• 기간: ${config.startDate} ~ ${config.endDate}
+• 초기 자금: $${simulationPortfolio.balance.toLocaleString()}
+• 난이도: ${config.difficulty}
+• AI 코치: ${config.enableAI ? '활성화' : '비활성화'}
+• 거래 주기: ${config.tradingInterval}
 
-시뮬레이션을 시작하시겠습니까?`,
+⚠️ 이것은 연습용 시뮬레이션입니다.
+실제 포트폴리오에는 영향을 주지 않습니다!`,
       [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '시작!',
+        { text: '설정 변경', style: 'cancel' },
+        { 
+          text: '시작!', 
           onPress: () => {
-            // 시뮬레이션 데이터를 전달하며 화면 이동
-            navigation.navigate('SimulationProgress', {
-              config: {
-                startDate,
-                endDate,
-                tradingInterval,
-                initialAmount,
-                difficulty,
-                enableAI,
-                totalSteps: selectedInterval.description.match(/\d+/)[0]
-              }
+            // 시뮬레이션 진행 화면으로 이동 (깨끗한 데이터와 함께)
+            navigation.navigate('SimulationProgress', { 
+              config: config,
+              simulationData: simulationPortfolio  // 깨끗한 시뮬레이션 데이터 전달
             });
           }
         }
@@ -115,424 +74,352 @@ const SimulationSetupScreen = ({ navigation }) => {
     );
   };
 
-  const renderStartDateOption = (option) => (
-    <TouchableOpacity
-      key={option.value}
-      style={[
-        styles.optionCard,
-        startDate === option.value && styles.optionCardSelected
-      ]}
-      onPress={() => setStartDate(option.value)}
-    >
-      <View style={styles.optionHeader}>
-        <Text style={styles.optionLabel}>{option.label}</Text>
-        <Text style={styles.optionBadge}>{option.period}</Text>
-      </View>
-      <Text style={styles.optionDescription}>
-        {option.value === '2020-03-01' ? '코로나 시기 극한 상황 체험' : `${option.period} 투자 시뮬레이션`}
-      </Text>
-    </TouchableOpacity>
-  );
+  const handleResetSimulation = () => {
+    Alert.alert(
+      '🧹 시뮬레이션 초기화',
+      '시뮬레이션 데이터를 완전히 초기화하시겠습니까?\n\n• 자금: $100,000로 리셋\n• 보유 주식: 모두 삭제\n• 거래 내역: 모두 삭제',
+      [
+        { text: '취소', style: 'cancel' },
+        { 
+          text: '초기화', 
+          style: 'destructive',
+          onPress: () => {
+            setSimulationPortfolio(SIMULATION_INITIAL_DATA);
+            console.log('🧹 시뮬레이션 데이터 초기화 완료');
+            Alert.alert('✅ 초기화 완료', '시뮬레이션이 $100,000 깨끗한 상태로 초기화되었습니다!');
+          }
+        }
+      ]
+    );
+  };
 
-  const renderIntervalOption = (option) => (
-    <TouchableOpacity
-      key={option.id}
-      style={[
-        styles.optionCard,
-        tradingInterval === option.id && styles.optionCardSelected
-      ]}
-      onPress={() => setTradingInterval(option.id)}
-    >
-      <View style={styles.optionHeader}>
-        <Text style={styles.optionLabel}>{option.label}</Text>
-        <View style={[styles.difficultyBadge, { backgroundColor: option.color }]}>
-          <Text style={styles.difficultyText}>{option.difficulty}</Text>
-        </View>
-      </View>
-      <Text style={styles.optionDescription}>{option.description}</Text>
-    </TouchableOpacity>
-  );
-
-  const renderDifficultyOption = (option) => (
-    <TouchableOpacity
-      key={option.id}
-      style={[
-        styles.difficultyCard,
-        difficulty === option.id && styles.optionCardSelected
-      ]}
-      onPress={() => setDifficulty(option.id)}
-    >
-      <Text style={styles.difficultyLabel}>{option.label}</Text>
-      <Text style={styles.difficultyDescription}>{option.description}</Text>
-      <View style={styles.featuresList}>
-        {option.features.map((feature, index) => (
-          <Text key={index} style={styles.featureItem}>• {feature}</Text>
-        ))}
-      </View>
-    </TouchableOpacity>
-  );
+  const updateConfig = (key, value) => {
+    setConfig(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
 
   return (
     <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity
+        <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.navigate('MainDashboard')}
         >
-          <Text style={styles.backButtonText}>← 홈</Text>
+          <Text style={styles.backButtonText}>← 뒤로</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>시뮬레이션 설정</Text>
-        <View style={styles.placeholder} />
+        <Text style={styles.title}>🎮 투자 시뮬레이션 설정</Text>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* 소개 */}
-        <View style={styles.introCard}>
-          <Text style={styles.introTitle}>🎮 투자 시뮬레이션</Text>
-          <Text style={styles.introText}>
-            과거 실제 주가 데이터로 시간여행을 떠나보세요!{'\n'}
-            선택한 시점부터 단계별로 투자 결정을 내리며{'\n'}
-            실전 같은 투자 경험을 쌓을 수 있습니다.
-          </Text>
+      <ScrollView style={styles.content}>
+        {/* 시뮬레이션 상태 표시 */}
+        <View style={styles.statusCard}>
+          <Text style={styles.statusTitle}>🎯 시뮬레이션 상태</Text>
+          <Text style={styles.statusText}>💰 초기 자금: ${simulationPortfolio.balance.toLocaleString()}</Text>
+          <Text style={styles.statusText}>📊 보유 주식: {Object.keys(simulationPortfolio.portfolio).length}개</Text>
+          <Text style={styles.statusText}>📈 거래 내역: {simulationPortfolio.transactions.length}건</Text>
+          <Text style={styles.warningText}>⚠️ 실제 포트폴리오와 완전 분리됨</Text>
         </View>
 
-        {/* 시작 시점 선택 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📅 시작 시점 선택</Text>
-          <Text style={styles.sectionSubtitle}>어느 시점부터 투자를 시작할까요?</Text>
-          {startDateOptions.map(renderStartDateOption)}
-        </View>
-
-        {/* 거래 주기 선택 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⏰ 거래 주기 선택</Text>
-          <Text style={styles.sectionSubtitle}>얼마나 자주 투자 결정을 내릴까요?</Text>
-          {intervalOptions.map(renderIntervalOption)}
-        </View>
-
-        {/* 난이도 선택 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎯 난이도 선택</Text>
-          <Text style={styles.sectionSubtitle}>어느 정도의 도움을 받으시겠어요?</Text>
-          {difficultyOptions.map(renderDifficultyOption)}
-        </View>
-
-        {/* 추가 설정 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⚙️ 추가 설정</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>초기 투자 자금</Text>
-              <Text style={styles.settingValue}>${initialAmount.toLocaleString()}</Text>
-            </View>
-            <Text style={styles.settingNote}>(현재 고정값)</Text>
+        {/* 시뮬레이션 설정 */}
+        <View style={styles.configCard}>
+          <Text style={styles.configTitle}>⚙️ 시뮬레이션 설정</Text>
+          
+          {/* 시작 날짜 */}
+          <View style={styles.configRow}>
+            <Text style={styles.configLabel}>📅 시작 날짜</Text>
+            <TouchableOpacity style={styles.configValue}>
+              <Text>{config.startDate}</Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>AI 투자 코치</Text>
-              <Text style={styles.settingDescription}>
-                각 단계에서 AI의 투자 조언을 받습니다
-              </Text>
+          {/* 종료 날짜 */}
+          <View style={styles.configRow}>
+            <Text style={styles.configLabel}>📅 종료 날짜</Text>
+            <TouchableOpacity style={styles.configValue}>
+              <Text>{config.endDate}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 초기 자금 */}
+          <View style={styles.configRow}>
+            <Text style={styles.configLabel}>💰 초기 자금</Text>
+            <TouchableOpacity style={styles.configValue}>
+              <Text>${config.initialAmount.toLocaleString()}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 난이도 */}
+          <View style={styles.configRow}>
+            <Text style={styles.configLabel}>🎯 난이도</Text>
+            <View style={styles.difficultyButtons}>
+              {['easy', 'normal', 'hard'].map(level => (
+                <TouchableOpacity
+                  key={level}
+                  style={[
+                    styles.difficultyButton,
+                    config.difficulty === level && styles.selectedDifficulty
+                  ]}
+                  onPress={() => updateConfig('difficulty', level)}
+                >
+                  <Text style={[
+                    styles.difficultyText,
+                    config.difficulty === level && styles.selectedDifficultyText
+                  ]}>
+                    {level === 'easy' ? '쉬움' : level === 'normal' ? '보통' : '어려움'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
+          </View>
+
+          {/* 거래 주기 */}
+          <View style={styles.configRow}>
+            <Text style={styles.configLabel}>⏰ 거래 주기</Text>
+            <View style={styles.intervalButtons}>
+              {[
+                { key: 'weekly', label: '주간' },
+                { key: 'monthly', label: '월간' },
+                { key: 'quarterly', label: '분기' }
+              ].map(interval => (
+                <TouchableOpacity
+                  key={interval.key}
+                  style={[
+                    styles.intervalButton,
+                    config.tradingInterval === interval.key && styles.selectedInterval
+                  ]}
+                  onPress={() => updateConfig('tradingInterval', interval.key)}
+                >
+                  <Text style={[
+                    styles.intervalText,
+                    config.tradingInterval === interval.key && styles.selectedIntervalText
+                  ]}>
+                    {interval.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* AI 코치 활성화 */}
+          <View style={styles.configRow}>
+            <Text style={styles.configLabel}>🤖 AI 코치</Text>
             <Switch
-              value={enableAI}
-              onValueChange={setEnableAI}
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={enableAI ? '#007bff' : '#f4f3f4'}
+              value={config.enableAI}
+              onValueChange={(value) => updateConfig('enableAI', value)}
+              trackColor={{ false: '#767577', true: '#007AFF' }}
+              thumbColor={config.enableAI ? '#ffffff' : '#f4f3f4'}
             />
           </View>
         </View>
-        {/* 🔄 초기화 버튼 추가 */}
-        <View style={styles.resetButtonContainer}>
-          <TouchableOpacity
+
+        {/* 액션 버튼들 */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity 
             style={styles.resetButton}
-            onPress={() => {
-              Alert.alert(
-                '🔄 시뮬레이션 초기화',
-                '현재 설정을 기본값으로 초기화하시겠습니까?',
-                [
-                  { text: '취소', style: 'cancel' },
-                  {
-                    text: '초기화',
-                    style: 'destructive',
-                    onPress: () => {
-                      setStartDate('2023-01-01');
-                      setTradingInterval('monthly');
-                      setDifficulty('normal');
-                      setEnableAI(true);
-                      Alert.alert('완료', '설정이 초기화되었습니다.');
-                    }
-                  }
-                ]
-              );
-            }}
-            activeOpacity={0.8}
+            onPress={handleResetSimulation}
           >
-            <Text style={styles.resetButtonIcon}>🔄</Text>
-            <Text style={styles.resetButtonText}>설정 초기화</Text>
-          </TouchableOpacity>
-        </View>
-        {/* 시작 버튼 */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.startButton} onPress={handleStartSimulation}>
-            <Text style={styles.startButtonText}>🚀 시뮬레이션 시작하기</Text>
+            <Text style={styles.resetButtonText}>🧹 시뮬레이션 초기화</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.practiceButton}
-            onPress={() => navigation.navigate('StockList')}
+          <TouchableOpacity 
+            style={styles.startButton}
+            onPress={handleStartSimulation}
           >
-            <Text style={styles.practiceButtonText}>📚 자유 연습 모드</Text>
+            <Text style={styles.startButtonText}>🚀 시뮬레이션 시작!</Text>
           </TouchableOpacity>
         </View>
 
-        {/* 하단 여백 */}
-        <View style={styles.bottomSpacing} />
+        {/* 설명 */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>ℹ️ 시뮬레이션 안내</Text>
+          <Text style={styles.infoText}>• 실제 돈을 사용하지 않는 연습용 모드입니다</Text>
+          <Text style={styles.infoText}>• 실제 포트폴리오에는 전혀 영향을 주지 않습니다</Text>
+          <Text style={styles.infoText}>• 과거 데이터를 기반으로 투자 실력을 연습할 수 있습니다</Text>
+          <Text style={styles.infoText}>• AI 코치가 실시간으로 조언을 제공합니다</Text>
+        </View>
       </ScrollView>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f5f5f5',
+    paddingTop: 50,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    borderBottomColor: '#e0e0e0',
   },
   backButton: {
-    padding: 12,
-    backgroundColor: '#007bff',
-    borderRadius: 6,
+    marginRight: 15,
   },
   backButtonText: {
     fontSize: 16,
-    color: 'white',
-    fontWeight: '600',
+    color: '#007AFF',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  placeholder: {
-    width: 60,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  introCard: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: '#e3f2fd',
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
-  },
-  introTitle: {
+  title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 10,
   },
-  introText: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
+  content: {
+    flex: 1,
+    padding: 20,
   },
-  section: {
-    marginHorizontal: 20,
-    marginBottom: 30,
+  statusCard: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#28a745',
   },
-  sectionTitle: {
+  statusTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 15,
-  },
-  optionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
     marginBottom: 10,
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    color: '#333',
   },
-  optionCardSelected: {
-    borderColor: '#007bff',
-    backgroundColor: '#f0f8ff',
+  statusText: {
+    fontSize: 16,
+    marginBottom: 5,
+    color: '#666',
   },
-  optionHeader: {
+  warningText: {
+    fontSize: 14,
+    marginTop: 10,
+    color: '#28a745',
+    fontWeight: 'bold',
+  },
+  configCard: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  configTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
+  configRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 20,
   },
-  optionLabel: {
+  configLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: '#333',
-  },
-  optionBadge: {
-    fontSize: 12,
-    color: '#007bff',
-    backgroundColor: '#e3f2fd',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  optionDescription: {
-    fontSize: 14,
-    color: '#666',
-  },
-  difficultyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  difficultyText: {
-    fontSize: 12,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  difficultyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-  },
-  difficultyLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  difficultyDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
-  },
-  featuresList: {
-    marginLeft: 10,
-  },
-  featureItem: {
-    fontSize: 13,
-    color: '#555',
-    marginBottom: 2,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  settingInfo: {
     flex: 1,
   },
-  settingLabel: {
+  configValue: {
+    backgroundColor: '#f8f9fa',
+    padding: 10,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  difficultyButtons: {
+    flexDirection: 'row',
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  difficultyButton: {
+    backgroundColor: '#f8f9fa',
+    padding: 8,
+    borderRadius: 6,
+    marginLeft: 8,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  selectedDifficulty: {
+    backgroundColor: '#007AFF',
+  },
+  difficultyText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  selectedDifficultyText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  intervalButtons: {
+    flexDirection: 'row',
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  intervalButton: {
+    backgroundColor: '#f8f9fa',
+    padding: 8,
+    borderRadius: 6,
+    marginLeft: 8,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  selectedInterval: {
+    backgroundColor: '#007AFF',
+  },
+  intervalText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  selectedIntervalText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  actionButtons: {
+    marginBottom: 20,
+  },
+  resetButton: {
+    backgroundColor: '#dc3545',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  resetButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
-  },
-  settingValue: {
-    fontSize: 14,
-    color: '#007bff',
-    fontWeight: '600',
-  },
-  settingDescription: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-  settingNote: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  buttonContainer: {
-    marginHorizontal: 20,
-    marginBottom: 20,
   },
   startButton: {
     backgroundColor: '#28a745',
-    padding: 18,
-    borderRadius: 12,
+    padding: 15,
+    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   startButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  practiceButton: {
-    backgroundColor: '#6c757d',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  practiceButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  bottomSpacing: {
-    height: 30,
-  },
-  resetButtonContainer: {
-    marginTop: 16,
-    marginBottom: 16,
-  },
-  resetButton: {
-    backgroundColor: '#6c757d',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#5a6268',
-  },
-  resetButtonIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  resetButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
     color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  infoCard: {
+    backgroundColor: '#e7f3ff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  infoText: {
+    fontSize: 14,
+    marginBottom: 5,
+    color: '#666',
   },
 });
-
-export default SimulationSetupScreen;
