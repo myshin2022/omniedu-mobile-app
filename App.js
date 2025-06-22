@@ -123,13 +123,15 @@ export default function App() {
 
       } else if (screenName === 'SimulationProgress') {
         console.log('🎮 시뮬레이션 진행 화면으로 이동 중...');
+        console.log('🔍 현재 화면:', currentScreen);
+        console.log('🔍 SimulationGameScreen 존재:', !!SimulationGameScreen);
         if (SimulationGameScreen) {
+          console.log('✅ setCurrentScreen("SimulationGame") 호출');
           setCurrentScreen('SimulationGame');
         } else {
           Alert.alert('오류', 'SimulationGameScreen을 로드할 수 없습니다.');
         }
       }
-
       else if (screenName === 'APITest') {
         console.log('🧪 API 테스트 화면으로 이동 중...');
         if (APITestScreen) {
@@ -212,16 +214,43 @@ export default function App() {
             </View>
           );
         }
-
+         
       case 'SimulationGame':
+        console.log('🎮 SimulationGame case 실행됨');
+        console.log('🔍 SimulationGameScreen 존재:', !!SimulationGameScreen);
         if (SimulationGameScreen) {
-          return <SimulationGameScreen navigation={mockNavigation} />;
+          console.log('✅ SimulationGameScreen 렌더링 시작');
+          return (
+            <SimulationGameScreen 
+              navigation={mockNavigation} 
+              route={{
+                params: {
+                  config: {
+                    startDate: '2023-01-01',
+                    endDate: '2024-12-31',
+                    totalSteps: '24',
+                    difficulty: 'normal',
+                    tradingInterval: 'monthly',
+                    enableAI: true
+                  },
+                  simulationData: {
+                    balance: 100000,
+                    portfolio: {},
+                    transactions: [],
+                    total_asset: 100000,
+                    user_id: 'simulation_user',
+                    username: 'simulation_mode'
+                  }
+                }
+              }}
+            />
+          );
         } else {
           return (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>SimulationGameScreen을 로드할 수 없습니다</Text>
             </View>
-           );
+          );
         }
 
       default:
