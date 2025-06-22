@@ -1,4 +1,4 @@
-// SimulationGameScreen.js (수정된 버전)
+// SimulationGameScreen.js (자유로운 수량 입력 포함)
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -136,7 +136,7 @@ export default function SimulationGameScreen({ navigation, route }) {
     return "✅ 포트폴리오 조언: 균형잡힌 포트폴리오입니다. 현재 전략을 유지하세요.";
   };
 
-  // 2023-2024년 실제 주가 데이터 (24개월 완전판)
+  // 2023-2024년 실제 주가 데이터 (24개월)
   const monthlyStockData = {
     1: [ // 2023년 1월
       { symbol: 'AAPL', name: 'Apple Inc.', price: 150.82, change: '+0.0%', changeValue: '+0.00' },
@@ -576,15 +576,541 @@ export default function SimulationGameScreen({ navigation, route }) {
     }
   };
 
-  // 거래 분석 (수정된 버전)
+  // 거래 분석
   const analyzeTradeHistory = () => {
     const trades = simPortfolio.transactions.filter(t => t.includes('매수') || t.includes('매도'));
     const buyTrades = trades.filter(t => t.includes('매수')).length;
     const sellTrades = trades.filter(t => t.includes('매도')).length;
     
-    // 수익 거래 vs 손실 거래 분석
-    const profitTrades = trades.filter(t => t.includes('손익: +')).length;
-    const lossTrades = trades.filter(t => t.includes('손익: -')).length;
+    // 수익 거래 vs 손실 거래 분석 (간단 버전)
+    const profitTrades = trades.filter(t => t.includes('+$')).length;
+    const lossTrades = trades.filter(t => t.includes('-$')).length;
+  // 주식 거래 알림 (자유로운 수량 입력!)
+  const showTradeDialog = (stock) => {
+    const holding = simPortfolio.portfolio[stock.symbol]?.quantity || 0;
+    const maxAffordable = Math.floor(simPortfolio.balance / stock.price);
+    
+    Alert.alert(
+      `📈 ${stock.symbol} 거래`,
+      `${stock.name}\n현재가: $${stock.price}\n변동: ${stock.change} (${stock.changeValue})\n\n💼 보유 수량: ${holding}주\n💰 현재 잔액: $${simPortfolio.balance.toFixed(2)}\n📊 최대 매수 가능: ${maxAffordable}주`,
+      [
+        { text: '❌ 취소', style: 'cancel' },
+        { text: '📈 매수하기', onPress: () => showQuantityInput(stock, 'buy') },
+        ...(holding > 0 ? [
+          { text: '📉 매도하기', onPress: () => showQuantityInput(stock, 'sell') },
+          { text: '🔄 전량 매도', onPress: () => sellStock(stock, holding) }
+        ] : [])
+      ]
+    );
+  };
+
+  // 주식 아이템 렌더링
+  const renderStockItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.stockItem}
+      onPress={() => showTradeDialog(item)}
+    >
+      <View style={styles.stockInfo}>
+        <Text style={styles.stockSymbol}>{item.symbol}</Text>
+        <Text style={styles.stockName}>{item.name}</Text>
+        <Text style={styles.stockHolding}>
+          보유: {simPortfolio.portfolio[item.symbol]?.quantity || 0}주
+        </Text>
+      </View>
+      <View style={styles.stockPrice}>
+        <Text style={styles.priceText}>${item.price}</Text>
+        <Text style={[
+          styles.changeText, 
+          { color: item.change.startsWith('+') ? '#28a745' : '#dc3545' }
+        ]}>
+          {item.change}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.navigate('SimulationSetup')}
+        >
+          <Text style={styles.backButtonText}>← 설정</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>🎮 투자 시뮬레이션</Text>
+        <TouchableOpacity 
+          style={styles.homeButton}
+          onPress={() => navigation.navigate('MainDashboard')}
+        >
+          <Text style={styles.homeButtonText}>🏠 메인</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 시뮬레이션 상태 */}
+      <View style={styles.statusBar}>
+        <Text style={styles.stepText}>📅 {currentDate} ({currentStep}/{totalSteps})</Text>
+        <Text style={styles.balanceText}>💰 ${simPortfolio.balance.toFixed(2)}</Text>
+      </View>
+
+      {/* 포트폴리오 요약 */}
+      <View style={styles.portfolioSummary}>
+        <Text style={styles.summaryTitle}>📊 시뮬레이션 포트폴리오</Text>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryText}>현금: ${simPortfolio.balance.toFixed(2)}</Text>
+          <Text style={styles.summaryText}>보유 종목: {Object.keys(simPortfolio.portfolio).length}개</Text>
+        </View>
+        <Text style={styles.warningText}>⚠️ 연습용 시뮬레이션 (실제 투자 아님)</Text>
+      </View>
+
+      {/* 주식 목록 */}
+      <View style={styles.stockSection}>
+        <Text style={styles.sectionTitle}>📈 거래 가능 주식 (탭해서 자유롭게 매매)</Text>
+        <FlatList
+          data={simulationStocks}
+          renderItem={renderStockItem}
+          keyExtractor={(item) => item.symbol}
+          style={styles.stockList}
+        />
+      </View>
+
+      {/* 액션 버튼 */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={styles.nextButton}
+          onPress={nextStep}
+        >
+          <Text style={styles.nextButtonText}>
+            {currentStep >= totalSteps ? '🎉 완료!' : `📅 다음 ${config?.tradingInterval || '단계'}`}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    paddingTop: 50,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    flex: 1,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 2,
+    textAlign: 'center',
+  },
+  homeButton: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  homeButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#007AFF',
+  },
+  stepText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  balanceText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  portfolioSummary: {
+    backgroundColor: '#fff',
+    margin: 20,
+    padding: 15,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#28a745',
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  summaryText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#28a745',
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  stockSection: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  stockList: {
+    flex: 1,
+  },
+  stockItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
+    marginBottom: 8,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#007AFF',
+  },
+  stockInfo: {
+    flex: 1,
+  },
+  stockSymbol: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  stockName: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  stockHolding: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginTop: 2,
+    fontWeight: 'bold',
+  },
+  stockPrice: {
+    alignItems: 'flex-end',
+  },
+  priceText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  changeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  actionButtons: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  nextButton: {
+    backgroundColor: '#28a745',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  nextButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});)).length;
+    const lossTrades = trades.filter(t => t.includes('-
+
+  // 주식 거래 알림 (자유로운 수량 입력!)
+  const showTradeDialog = (stock) => {
+    const holding = simPortfolio.portfolio[stock.symbol]?.quantity || 0;
+    const maxAffordable = Math.floor(simPortfolio.balance / stock.price);
+    
+    Alert.alert(
+      `📈 ${stock.symbol} 거래`,
+      `${stock.name}\n현재가: $${stock.price}\n변동: ${stock.change} (${stock.changeValue})\n\n💼 보유 수량: ${holding}주\n💰 현재 잔액: $${simPortfolio.balance.toFixed(2)}\n📊 최대 매수 가능: ${maxAffordable}주`,
+      [
+        { text: '❌ 취소', style: 'cancel' },
+        { text: '📈 매수하기', onPress: () => showQuantityInput(stock, 'buy') },
+        ...(holding > 0 ? [
+          { text: '📉 매도하기', onPress: () => showQuantityInput(stock, 'sell') },
+          { text: '🔄 전량 매도', onPress: () => sellStock(stock, holding) }
+        ] : [])
+      ]
+    );
+  };
+
+  // 주식 아이템 렌더링
+  const renderStockItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.stockItem}
+      onPress={() => showTradeDialog(item)}
+    >
+      <View style={styles.stockInfo}>
+        <Text style={styles.stockSymbol}>{item.symbol}</Text>
+        <Text style={styles.stockName}>{item.name}</Text>
+        <Text style={styles.stockHolding}>
+          보유: {simPortfolio.portfolio[item.symbol]?.quantity || 0}주
+        </Text>
+      </View>
+      <View style={styles.stockPrice}>
+        <Text style={styles.priceText}>${item.price}</Text>
+        <Text style={[
+          styles.changeText, 
+          { color: item.change.startsWith('+') ? '#28a745' : '#dc3545' }
+        ]}>
+          {item.change}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.navigate('SimulationSetup')}
+        >
+          <Text style={styles.backButtonText}>← 설정</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>🎮 투자 시뮬레이션</Text>
+        <TouchableOpacity 
+          style={styles.homeButton}
+          onPress={() => navigation.navigate('MainDashboard')}
+        >
+          <Text style={styles.homeButtonText}>🏠 메인</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 시뮬레이션 상태 */}
+      <View style={styles.statusBar}>
+        <Text style={styles.stepText}>📅 {currentDate} ({currentStep}/{totalSteps})</Text>
+        <Text style={styles.balanceText}>💰 ${simPortfolio.balance.toFixed(2)}</Text>
+      </View>
+
+      {/* 포트폴리오 요약 */}
+      <View style={styles.portfolioSummary}>
+        <Text style={styles.summaryTitle}>📊 시뮬레이션 포트폴리오</Text>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryText}>현금: ${simPortfolio.balance.toFixed(2)}</Text>
+          <Text style={styles.summaryText}>보유 종목: {Object.keys(simPortfolio.portfolio).length}개</Text>
+        </View>
+        <Text style={styles.warningText}>⚠️ 연습용 시뮬레이션 (실제 투자 아님)</Text>
+      </View>
+
+      {/* 주식 목록 */}
+      <View style={styles.stockSection}>
+        <Text style={styles.sectionTitle}>📈 거래 가능 주식 (탭해서 자유롭게 매매)</Text>
+        <FlatList
+          data={simulationStocks}
+          renderItem={renderStockItem}
+          keyExtractor={(item) => item.symbol}
+          style={styles.stockList}
+        />
+      </View>
+
+      {/* 액션 버튼 */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={styles.nextButton}
+          onPress={nextStep}
+        >
+          <Text style={styles.nextButtonText}>
+            {currentStep >= totalSteps ? '🎉 완료!' : `📅 다음 ${config?.tradingInterval || '단계'}`}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    paddingTop: 50,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    flex: 1,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 2,
+    textAlign: 'center',
+  },
+  homeButton: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  homeButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#007AFF',
+  },
+  stepText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  balanceText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  portfolioSummary: {
+    backgroundColor: '#fff',
+    margin: 20,
+    padding: 15,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#28a745',
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  summaryText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#28a745',
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  stockSection: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  stockList: {
+    flex: 1,
+  },
+  stockItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
+    marginBottom: 8,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#007AFF',
+  },
+  stockInfo: {
+    flex: 1,
+  },
+  stockSymbol: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  stockName: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  stockHolding: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginTop: 2,
+    fontWeight: 'bold',
+  },
+  stockPrice: {
+    alignItems: 'flex-end',
+  },
+  priceText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  changeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  actionButtons: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  nextButton: {
+    backgroundColor: '#28a745',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  nextButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});)).length;
     const winRate = sellTrades > 0 ? ((profitTrades / sellTrades) * 100).toFixed(1) : 0;
 
     return {
@@ -661,7 +1187,7 @@ ${grade.grade}
     }
   };
 
-  // 주식 거래 알림
+  // 주식 거래 알림 (자유로운 수량 입력!)
   const showTradeDialog = (stock) => {
     const holding = simPortfolio.portfolio[stock.symbol]?.quantity || 0;
     const maxAffordable = Math.floor(simPortfolio.balance / stock.price);
