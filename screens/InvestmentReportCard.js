@@ -1,56 +1,60 @@
 // screens/InvestmentReportCard.js - 완성된 투자 성적표 (개념화 분석 포함)
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import React, {useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
   Dimensions,
   Alert
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
-export default function InvestmentReportCard({ navigation, route }) {
-  const { simulationResults, userProfile } = route?.params || {};
+export default function InvestmentReportCard({navigation, route}) {
+  const {simulationResults, userProfile} = route?.params || {};
   const [reportData, setReportData] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState('total');
 
   return (
-    <View style={{flex: 1, backgroundColor: 'white'}}>
-      {/* 헤더 */}
-      <View style={{padding: 20, paddingTop: 60, borderBottomWidth: 1, borderColor: '#ddd'}}>
-        <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center'}}>
-          📊 투자 성적표
-        </Text>
-      </View>
-    
-      {/* 메인 성과 */}
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
-        <View style={{backgroundColor: '#f0f8ff', padding: 30, borderRadius: 15, width: '100%', alignItems: 'center'}}>
-          <Text style={{fontSize: 36, fontWeight: 'bold', color: 'green', marginBottom: 10}}>
-            +914%
-          </Text>
-          <Text style={{fontSize: 18, color: '#666', marginBottom: 20}}>
-            총 수익률
-          </Text>
-          <Text style={{fontSize: 16, textAlign: 'center', color: '#333'}}>
-            초기 투자: $100,000
-          </Text>
-          <Text style={{fontSize: 16, textAlign: 'center', color: '#333'}}>
-            최종 자산: $1,014,066
-          </Text>
+      <View style={{flex: 1, backgroundColor: 'white'}}>
+        {/* 헤더 */}
+        <View style={{padding: 20, paddingTop: 60, borderBottomWidth: 1, borderColor: '#ddd'}}>
+          <View style={{padding: 20, paddingTop: 60, borderBottomWidth: 1, borderColor: '#ddd'}}>
+            <Text style={{fontSize: 16, color: 'red', backgroundColor: 'yellow'}}>테스트</Text>
+            <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center'}}>
+              📊 투자 성적표
+            </Text>
+          </View>
         </View>
-      
-        <View style={{marginTop: 30, padding: 20, backgroundColor: '#fff5f5', borderRadius: 10}}>
-          <Text style={{fontSize: 16, fontWeight: 'bold', marginBottom: 10}}>🤖 AI 코멘트</Text>
-          <Text style={{fontSize: 14, color: '#333'}}>
-            놀라운 성과입니다! NVDA 투자로 워렌 버핏급 수익률을 달성하셨네요! 🚀
-          </Text>
+
+        {/* 메인 성과 - 기존 코드 그대로 */}
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
+          <View
+              style={{backgroundColor: '#f0f8ff', padding: 30, borderRadius: 15, width: '100%', alignItems: 'center'}}>
+            <Text style={{fontSize: 36, fontWeight: 'bold', color: 'green', marginBottom: 10}}>
+              +914%
+            </Text>
+            <Text style={{fontSize: 18, color: '#666', marginBottom: 20}}>
+              총 수익률
+            </Text>
+            <Text style={{fontSize: 16, textAlign: 'center', color: '#333'}}>
+              초기 투자: $100,000
+            </Text>
+            <Text style={{fontSize: 16, textAlign: 'center', color: '#333'}}>
+              최종 자산: $1,014,066
+            </Text>
+          </View>
+
+          <View style={{marginTop: 30, padding: 20, backgroundColor: '#fff5f5', borderRadius: 10}}>
+            <Text style={{fontSize: 16, fontWeight: 'bold', marginBottom: 10}}>🤖 AI 코멘트</Text>
+            <Text style={{fontSize: 14, color: '#333'}}>
+              놀라운 성과입니다! NVDA 투자로 워렌 버핏급 수익률을 달성하셨네요! 🚀
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
   );
 }
 
@@ -105,7 +109,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -178,7 +182,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
