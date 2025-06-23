@@ -12,6 +12,7 @@ let PerformanceScreen = null;
 let SimulationSetupScreen = null;
 let APITestScreen = null;
 let SimulationGameScreen = null;
+let InvestmentReportCard = null;
 
 try {
   StockListScreen = require('./screens/StockListScreen').default;
@@ -56,6 +57,12 @@ try {
   console.log('❌ SimulationGameScreen 로드 실패:', error.message);
 }
   
+try {
+  InvestmentReportCard = require('./screens/InvestmentReportCard').default;
+  console.log('✅ InvestmentReportCard 로드 성공');
+} catch (error) {
+  console.log('❌ InvestmentReportCard 로드 실패:', error.message);
+}
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('Login');
@@ -132,6 +139,16 @@ export default function App() {
           Alert.alert('오류', 'SimulationGameScreen을 로드할 수 없습니다.');
         }
       }
+
+      else if (screenName === 'InvestmentReportCard') {
+        console.log('📊 투자 성적표 화면으로 이동 중...');
+        if (InvestmentReportCard) {
+          setCurrentScreen('InvestmentReportCard');
+        } else {
+          Alert.alert('오류', 'InvestmentReportCard를 로드할 수 없습니다.');
+        }
+      }
+
       else if (screenName === 'APITest') {
         console.log('🧪 API 테스트 화면으로 이동 중...');
         if (APITestScreen) {
@@ -249,6 +266,50 @@ export default function App() {
           return (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>SimulationGameScreen을 로드할 수 없습니다</Text>
+            </View>
+          );
+        }       
+
+      case 'InvestmentReportCard':
+        console.log('🎯 InvestmentReportCard case 실행됨');
+        console.log('🔍 InvestmentReportCard 존재:', !!InvestmentReportCard);
+  
+        if (InvestmentReportCard) {
+          console.log('✅ InvestmentReportCard 렌더링 시작');
+    
+          // 시뮬레이션 결과 데이터 생성
+          const simulationResults = {
+            duration: 24,
+            initialAmount: 100000,
+            returnPercentage: 914.06671,
+            totalAssets: 1014066.71,
+            balance: 1014066.71,
+            portfolio: {
+              'NVDA': { quantity: 697, avg_price: 143.37 }
+            },
+            transactions: [
+              "🎮 매수: NVDA 697주 @ 143.37 (2023-01-01). 총 99928.89. 🤖 AI 코치: NVDA $143은 절호의 매수 기회입니다! AI 혁명이 시작되고 있으며, GPU 수요가 폭증할 예정입니다. 적극적인 매수를 추천합니다.",
+              "매도: NVDA 100주 @ 450.00 (2024-06-01). 총 45000.00. (손익: +30663.00)",
+              "매도: NVDA 200주 @ 480.00 (2024-09-01). 총 96000.00. (손익: +67326.00)"
+            ]
+          };
+    
+          return (
+            <InvestmentReportCard 
+              navigation={mockNavigation} 
+              route={{ 
+                params: { 
+                  simulationResults,
+                  userProfile: { username: 'testuser', level: 'advanced' }
+                } 
+              }} 
+            />
+          );
+        } else {
+          console.log('❌ InvestmentReportCard 컴포넌트 없음');
+          return (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>InvestmentReportCard를 로드할 수 없습니다</Text>
             </View>
           );
         }

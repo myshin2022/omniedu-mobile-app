@@ -626,6 +626,20 @@ ${grade.description}
 • 수익 거래: ${tradeStats.profitTrades}건`,
         [
           { text: '🔄 다시 하기', onPress: () => navigation.navigate('SimulationSetup') },
+
+    // 🆕 여기에 추가!
+    { 
+      text: '📊 성적표 보기', 
+      onPress: () => navigation.navigate('InvestmentReportCard', { 
+        simulationResults: { 
+          totalAssets: metrics.totalAssets, 
+          returnPercentage: metrics.returnPercentage, 
+          transactions: simPortfolio.transactions, 
+          initialAmount: 100000, 
+          duration: totalSteps 
+        } 
+      }) 
+    },
           { text: '🏠 메인으로', onPress: () => navigation.navigate('MainDashboard') }
         ]
       );
