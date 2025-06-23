@@ -1,63 +1,105 @@
-// screens/InvestmentReportCard.js - 완성된 투자 성적표 (개념화 분석 포함)
-import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  Alert
-} from 'react-native';
-
-const {width} = Dimensions.get('window');
+import React from 'react';
+import {View, Text, TouchableOpacity, ScrollView, StyleSheet} from 'react-native';
 
 export default function InvestmentReportCard({navigation, route}) {
-  const {simulationResults, userProfile} = route?.params || {};
-  const [reportData, setReportData] = useState(null);
-  const [selectedPeriod, setSelectedPeriod] = useState('total');
+  const {simulationResults} = route?.params || {};
+
+  // 데이터 추출
+  const returnPercentage = simulationResults?.returnPercentage || 914.1;
+  const initialAmount = simulationResults?.initialAmount || 100000;
+  const totalAssets = simulationResults?.totalAssets || 1014066;
+  const duration = simulationResults?.duration || 24;
+
+  // 등급 계산
+  const getGrade = (return_pct) => {
+    if (return_pct >= 500) return {grade: "S++", desc: "전설급 투자자", emoji: "👑"};
+    if (return_pct >= 200) return {grade: "S+", desc: "투자 마스터", emoji: "🚀"};
+    if (return_pct >= 100) return {grade: "A+", desc: "투자 고수", emoji: "⭐"};
+    if (return_pct >= 50) return {grade: "A", desc: "우수한 투자자", emoji: "📈"};
+    return {grade: "B", desc: "성장형 투자자", emoji: "🌱"};
+  };
+
+  const gradeInfo = getGrade(returnPercentage);
+
+  // AI 코멘트 생성
+  const generateAIComment = () => {
+    if (returnPercentage >= 500) {
+      return "놀라운 성과입니다! NVDA 집중투자로 워렌 버핏급 수익률을 달성하셨네요. AI 혁명의 시작점을 정확히 포착한 전설적 투자였습니다! 다음에는 Circle의 스테이블코인 혁명을 주목해보세요.";
+    } else if (returnPercentage >= 100) {
+      return "훌륭한 투자 성과입니다! 시장을 이해하고 올바른 타이밍에 투자하셨네요. 이런 실력이면 더 큰 수익도 기대할 수 있습니다.";
+    } else {
+      return "좋은 시작입니다! 꾸준한 학습과 경험을 통해 더 나은 투자자로 성장하실 수 있어요. 포기하지 마시고 계속 도전해보세요!";
+    }
+  };
 
   return (
-      <View style={{flex: 1, backgroundColor: 'white'}}>
+      <View style={styles.container}>
         {/* 헤더 */}
-        <View style={{padding: 20, paddingTop: 60, borderBottomWidth: 1, borderColor: '#ddd'}}>
-          <View style={{padding: 20, paddingTop: 60, borderBottomWidth: 1, borderColor: '#ddd'}}>
-            <Text style={{fontSize: 16, color: 'red', backgroundColor: 'yellow'}}>테스트</Text>
-            <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center'}}>
-              📊 투자 성적표
-            </Text>
-          </View>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backButton}>← 뒤로</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>📊 투자 성적표</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('MainDashboard')}>
+            <Text style={styles.backButton}>🏠 홈</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* 메인 성과 - 기존 코드 그대로 */}
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
-          <View
-              style={{backgroundColor: '#f0f8ff', padding: 30, borderRadius: 15, width: '100%', alignItems: 'center'}}>
-            <Text style={{fontSize: 36, fontWeight: 'bold', color: 'green', marginBottom: 10}}>
-              +914%
-            </Text>
-            <Text style={{fontSize: 18, color: '#666', marginBottom: 20}}>
-              총 수익률
-            </Text>
-            <Text style={{fontSize: 16, textAlign: 'center', color: '#333'}}>
-              초기 투자: $100,000
-            </Text>
-            <Text style={{fontSize: 16, textAlign: 'center', color: '#333'}}>
-              최종 자산: $1,014,066
-            </Text>
+        <ScrollView style={styles.content}>
+          {/* 메인 성과 */}
+          <View style={styles.scoreCard}>
+            <Text style={styles.scoreEmoji}>{gradeInfo.emoji}</Text>
+            <Text style={styles.scorePercentage}>+{returnPercentage.toFixed(1)}%</Text>
+            <Text style={styles.scoreGrade}>{gradeInfo.grade}</Text>
+            <Text style={styles.scoreDesc}>{gradeInfo.desc}</Text>
           </View>
 
-          <View style={{marginTop: 30, padding: 20, backgroundColor: '#fff5f5', borderRadius: 10}}>
-            <Text style={{fontSize: 16, fontWeight: 'bold', marginBottom: 10}}>🤖 AI 코멘트</Text>
-            <Text style={{fontSize: 14, color: '#333'}}>
-              놀라운 성과입니다! NVDA 투자로 워렌 버핏급 수익률을 달성하셨네요! 🚀
+          {/* 상세 정보 */}
+          <View style={styles.detailCard}>
+            <Text style={styles.cardTitle}>💰 투자 성과</Text>
+            <Text style={styles.detailText}>• 초기 투자: ${initialAmount.toLocaleString()}</Text>
+            <Text style={styles.detailText}>• 최종 자산: ${totalAssets.toLocaleString()}</Text>
+            <Text style={styles.detailText}>• 순수익: ${(totalAssets - initialAmount).toLocaleString()}</Text>
+            <Text style={styles.detailText}>• 투자기간: {duration}개월</Text>
+            <Text style={styles.detailText}>• 월평균: +{(returnPercentage / duration).toFixed(1)}%</Text>
+          </View>
+
+          {/* AI 코멘트 */}
+          <View style={styles.commentCard}>
+            <Text style={styles.cardTitle}>🤖 AI 투자 코치</Text>
+            <Text style={styles.commentText}>{generateAIComment()}</Text>
+          </View>
+
+          {/* 추천 */}
+          <View style={styles.recommendCard}>
+            <Text style={styles.cardTitle}>💡 다음 단계</Text>
+            <Text style={styles.recommendText}>
+              • 성공 패턴 분석하여 재현 가능한 전략 수립{'\n'}
+              • 리스크 관리 시스템 구축{'\n'}
+              • 새로운 투자 기회 발굴 (AI, 바이오, 에너지)
             </Text>
           </View>
+        </ScrollView>
+
+        {/* 🆕 하단 버튼들 추가 */}
+        <View style={styles.buttonSection}>
+          <TouchableOpacity
+              style={[styles.actionButton, {backgroundColor: '#007AFF'}]}
+              onPress={() => navigation.navigate('SimulationSetup')}
+          >
+            <Text style={styles.buttonText}>🎮 다시 시뮬레이션</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+              style={[styles.actionButton, {backgroundColor: '#28a745'}]}
+              onPress={() => navigation.navigate('MainDashboard')}
+          >
+            <Text style={styles.buttonText}>🏠 메인으로</Text>
+          </TouchableOpacity>
         </View>
       </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -85,29 +127,70 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  shareButton: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  scrollView: {
+  content: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  overviewCard: {
+  scoreCard: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 30,
+    marginTop: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  scoreEmoji: {
+    fontSize: 50,
+    marginBottom: 10,
+  },
+  scorePercentage: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: '#28a745',
+    marginBottom: 5,
+  },
+  scoreGrade: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  scoreDesc: {
+    fontSize: 16,
+    color: '#666',
+  },
+  detailCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
-    marginTop: 20,
+    marginTop: 15,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  commentCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 15,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  recommendCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 15,
+    marginBottom: 30,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
@@ -118,383 +201,39 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 15,
-  },
-  gradeSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  gradeEmoji: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  gradeTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  gradeDescription: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
     marginBottom: 12,
   },
-  scoreBar: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#e9ecef',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  scoreProgress: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  scoreText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  detailText: {
+    fontSize: 16,
     color: '#333',
+    marginBottom: 8,
+    lineHeight: 24,
   },
-  metricsGrid: {
+  commentText: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 24,
+  },
+  recommendText: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 24,
+  },
+  buttonSection: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    gap: 15,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
   },
-  metricItem: {
-    width: '50%',
+  actionButton: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 10,
     alignItems: 'center',
-    paddingVertical: 12,
   },
-  metricValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  metricLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  analysisCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginTop: 15,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  // 🧠 개념화 분석 스타일
-  conceptLevelSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: '#f8f9ff',
-    borderRadius: 8,
-  },
-  conceptLevel: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 8,
-  },
-  conceptDescription: {
-    fontSize: 14,
-    color: '#333',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  insightsSection: {
-    marginTop: 15,
-  },
-  sectionSubtitle: {
+  buttonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  insightCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
-  },
-  insightCategory: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
-  },
-  insightComment: {
-    fontSize: 13,
-    color: '#333',
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-  evidenceSection: {
-    marginTop: 8,
-  },
-  evidenceLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 4,
-  },
-  evidenceText: {
-    fontSize: 11,
-    color: '#666',
-    marginLeft: 8,
-    marginBottom: 2,
-  },
-  recommendationsSection: {
-    marginTop: 15,
-    padding: 12,
-    backgroundColor: '#f0f8ff',
-    borderRadius: 8,
-  },
-  recommendationText: {
-    fontSize: 13,
-    color: '#007AFF',
-    marginBottom: 6,
-    lineHeight: 18,
-  },
-  // 🧬 DNA 분석 전용 스타일
-  investorTypeSection: {
-    backgroundColor: '#f0f8ff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
-  },
-  investorTypeTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  investorTypeDescription: {
-    fontSize: 14,
-    color: '#333',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  strengthsContainer: {
-    marginBottom: 12,
-  },
-  strengthsTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  strengthsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  strengthTag: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    margin: 2,
-  },
-  strengthText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '500',
-  },
-  idealStrategyContainer: {
-    marginTop: 12,
-  },
-  idealStrategyTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  idealStrategyText: {
-    fontSize: 13,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  dnaTraitsSection: {
-    marginBottom: 20,
-  },
-  dnaTraitsGrid: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  dnaPrimaryCard: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 12,
-    marginRight: 8,
-    alignItems: 'center',
-  },
-  dnaSecondaryCard: {
-    flex: 1,
-    backgroundColor: '#6c757d',
-    borderRadius: 8,
-    padding: 12,
-    marginLeft: 8,
-    alignItems: 'center',
-  },
-  dnaLabel: {
-    fontSize: 12,
-    color: '#fff',
-    marginBottom: 4,
-  },
-  dnaPrimary: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  dnaSecondary: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  traitCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#28a745',
-  },
-  traitHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  traitType: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#28a745',
-  },
-  traitScore: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  traitInsight: {
-    fontSize: 12,
-    color: '#333',
-    lineHeight: 16,
-    marginBottom: 6,
-  },
-  traitRecommendation: {
-    fontSize: 11,
-    color: '#007AFF',
-    fontStyle: 'italic',
-  },
-  roadmapSection: {
-    marginBottom: 20,
-  },
-  roadmapStage: {
-    marginBottom: 12,
-  },
-  roadmapStageTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 6,
-  },
-  roadmapItem: {
-    fontSize: 12,
-    color: '#666',
-    lineHeight: 18,
-    marginLeft: 8,
-  },
-  compatibleStylesSection: {
-    marginBottom: 15,
-  },
-  styleCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 6,
-    padding: 10,
-    marginBottom: 6,
-  },
-  styleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  styleName: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  styleCompatibility: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#28a745',
-  },
-  styleReason: {
-    fontSize: 11,
-    color: '#666',
-  },
-  personalInsightsSection: {
-    marginBottom: 10,
-  },
-  personalInsightCard: {
-    backgroundColor: '#f0f8ff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#007AFF',
-  },
-  insightTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 6,
-  },
-  insightContent: {
-    fontSize: 12,
-    color: '#333',
-    lineHeight: 16,
-    marginBottom: 6,
-  },
-  insightActionable: {
-    fontSize: 11,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  tradeStats: {
-    marginTop: 10,
-  },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f8f9fa',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  statValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
   },
 });
