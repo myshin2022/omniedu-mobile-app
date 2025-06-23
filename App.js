@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Text, Alert } from 'react-native';
 import LoginScreen from './screens/LoginScreen';
 import MainDashboardScreen from './screens/MainDashboardScreen';
+import TransactionHistory from './src/components/TransactionHistory';
 
 // StockListScreen을 dynamic import로 시도
 let StockListScreen = null;
@@ -146,10 +147,13 @@ export default function App() {
           setCurrentScreen('InvestmentReportCard');
         } else {
           Alert.alert('오류', 'InvestmentReportCard를 로드할 수 없습니다.');
-        }
-      }
+        }     
 
-      else if (screenName === 'APITest') {
+      } else if (screenName === 'TransactionHistory') {
+        console.log('📊 거래 내역 화면으로 이동 중...');
+        setCurrentScreen('TransactionHistory');
+
+      } else if (screenName === 'APITest') {
         console.log('🧪 API 테스트 화면으로 이동 중...');
         if (APITestScreen) {
           setCurrentScreen('APITest');
@@ -178,6 +182,9 @@ export default function App() {
             </View>
           );
         }
+
+      case 'TransactionHistory':
+        return <TransactionHistory navigation={mockNavigation} />;
 
       case 'MainDashboard':
         return (
@@ -313,6 +320,9 @@ export default function App() {
             </View>
           );
         }
+
+      case 'TransactionHistory':
+        return <TransactionHistory navigation={mockNavigation} />;
 
       default:
         return <LoginScreen navigation={mockNavigation} />;
