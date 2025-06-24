@@ -4,13 +4,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function InvestmentReportCard({navigation, route}) {
   const {simulationResults, username, level, email} = route?.params || {};
+
+  // 🛡️ 안전한 변수 처리
+  const safeUsername = username || 'Guest';
+  const safeReturnPercentage = simulationResults?.returnPercentage || 0;
+  const safeInitialAmount = simulationResults?.initialAmount || 100000;
+  const safeTotalAssets = simulationResults?.totalAssets || safeInitialAmount;
+  const safeDuration = simulationResults?.duration || 24;
+
+  // 🔍 디버깅 로그
+  console.log('🔍 Original data:', simulationResults?.returnPercentage, username);
+  console.log('🔍 Safe processed:', safeReturnPercentage, safeUsername);
+
   const [aiComment, setAiComment] = useState('🤖 AI가 분석 중...');
 
-// ✅ 0도 유효한 값으로 처리
-  const returnPercentage = simulationResults?.returnPercentage ?? 0;
-  const initialAmount = simulationResults?.initialAmount ?? 100000;
-  const totalAssets = simulationResults?.totalAssets ?? initialAmount;
-  const duration = simulationResults?.duration ?? 24;
+  // 기존 변수들을 안전 변수로 교체
+  const returnPercentage = safeReturnPercentage;
+  const initialAmount = safeInitialAmount;
+  const totalAssets = safeTotalAssets;
+  const duration = safeDuration;
   // 등급 계산
   const getGrade = (return_pct) => {
     if (return_pct >= 500) return {grade: "S++", desc: "전설급 투자자", emoji: "👑"};
@@ -67,7 +79,7 @@ const saveSimulationResult = async () => {
       finalAmount: totalAssets,
       profit: totalAssets - initialAmount,
       duration: duration,
-      aiComment: generateAIComment(),
+      aiComment: aiComment,
       strategy: 'AI 추천 중심',
       difficulty: 'normal'
     };

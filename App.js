@@ -144,6 +144,11 @@ export default function App() {
         }
       } else if (screenName === 'InvestmentReportCard') {
         console.log('📊 투자 성적표 화면으로 이동 중...');
+
+        if (params?.simulationResults) {
+          console.log('💾 실제 시뮬레이션 결과 수신:', params.simulationResults);
+          setSimulationResults(params.simulationResults);
+        }
         if (InvestmentReportCard) {
           setCurrentScreen('InvestmentReportCard');
         } else {
