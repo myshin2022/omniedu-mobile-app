@@ -1,15 +1,16 @@
-import React from 'react';
-import {View, Text, TouchableOpacity, ScrollView, StyleSheet} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function InvestmentReportCard({navigation, route}) {
-  const {simulationResults} = route?.params || {};
+  const {simulationResults, username, level, email} = route?.params || {};
+  const [aiComment, setAiComment] = useState('🤖 AI가 분석 중...');
 
-  // 데이터 추출
-  const returnPercentage = simulationResults?.returnPercentage || 914.1;
-  const initialAmount = simulationResults?.initialAmount || 100000;
-  const totalAssets = simulationResults?.totalAssets || 1014066;
-  const duration = simulationResults?.duration || 24;
-
+// ✅ 0도 유효한 값으로 처리
+  const returnPercentage = simulationResults?.returnPercentage ?? 0;
+  const initialAmount = simulationResults?.initialAmount ?? 100000;
+  const totalAssets = simulationResults?.totalAssets ?? initialAmount;
+  const duration = simulationResults?.duration ?? 24;
   // 등급 계산
   const getGrade = (return_pct) => {
     if (return_pct >= 500) return {grade: "S++", desc: "전설급 투자자", emoji: "👑"};
@@ -20,85 +21,163 @@ export default function InvestmentReportCard({navigation, route}) {
   };
 
   const gradeInfo = getGrade(returnPercentage);
+  useEffect(() => {
+  // async 함수 없이 바로 호출
+  const comment = generateAIComment();
+  setAiComment(comment);
+}, [returnPercentage, username, duration]);
+const generateAIComment = () => {
+  // async 제거, 즉시 개인화 코멘트 반환
+  console.log(`개인화 코멘트 생성: ${username || 'Guest'}, 수익률: ${returnPercentage}%`);
 
-  // AI 코멘트 생성
-  const generateAIComment = () => {
-    if (returnPercentage >= 500) {
-      return "놀라운 성과입니다! NVDA 집중투자로 워렌 버핏급 수익률을 달성하셨네요. AI 혁명의 시작점을 정확히 포착한 전설적 투자였습니다! 다음에는 Circle의 스테이블코인 혁명을 주목해보세요.";
-    } else if (returnPercentage >= 100) {
-      return "훌륭한 투자 성과입니다! 시장을 이해하고 올바른 타이밍에 투자하셨네요. 이런 실력이면 더 큰 수익도 기대할 수 있습니다.";
-    } else {
-      return "좋은 시작입니다! 꾸준한 학습과 경험을 통해 더 나은 투자자로 성장하실 수 있어요. 포기하지 마시고 계속 도전해보세요!";
+  const name = username || 'Guest';
+
+  if (returnPercentage >= 1000) {
+    return `${name}님, 경이로운 성과입니다! 1000% 이상의 수익률은 전설급 투자 실력을 보여줍니다. 실제 투자에서도 이런 혜안을 발휘하시길!`;
+  } else if (returnPercentage >= 500) {
+    return `${name}님, 놀라운 통찰력입니다! 500% 이상의 수익률로 워렌 버핏급 성과를 거두셨네요. 이런 판단력이면 어떤 시장에서도 성공하실 거예요.`;
+  } else if (returnPercentage >= 200) {
+    return `${name}님, 정말 뛰어난 투자 감각이군요! 200% 이상의 수익률은 시장을 정확히 읽은 결과입니다. 계속 이런 신중함을 유지하세요.`;
+  } else if (returnPercentage >= 100) {
+    return `${name}님의 균형 잡힌 접근이 빛을 발했네요! 100% 이상 수익은 안정적이면서도 공격적인 훌륭한 투자 전략의 결과입니다.`;
+  } else if (returnPercentage >= 50) {
+    return `${name}님, 좋은 판단력을 보여주셨습니다! 50% 이상의 수익률은 신중한 분석의 결과죠. 이런 착실함이 장기적 성공의 열쇠입니다.`;
+  } else if (returnPercentage >= 20) {
+    return `${name}님, 안정적인 수익을 거두셨네요! 20% 이상은 많은 전문 투자자들도 달성하기 어려운 성과입니다. 꾸준히 성장해나가세요.`;
+  } else if (returnPercentage >= 0) {
+    return `${name}님, 플러스 수익을 달성하셨습니다! 손실 없는 투자도 훌륭한 성과예요. 이런 안전한 접근이 진정한 투자의 기본입니다.`;
+  } else if (returnPercentage >= -20) {
+    return `${name}님, 작은 손실이지만 귀중한 학습 기회였습니다. 모든 위대한 투자자들도 이런 과정을 거쳤어요. 다음엔 더 나은 결과가 있을 거예요.`;
+  } else {
+    return `${name}님, 투자에는 위험이 따르지만 이런 경험이 진짜 실력을 만듭니다. 포기하지 마시고 배움을 통해 성장해나가세요.`;
+  }
+};
+
+// 👇 여기에 saveSimulationResult 함수 추가!
+const saveSimulationResult = async () => {
+  try {
+    const simulationResult = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString('ko-KR'),
+      time: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'}),
+      finalScore: returnPercentage,
+      grade: gradeInfo.grade,
+      gradeEmoji: gradeInfo.emoji,
+      initialAmount: initialAmount,
+      finalAmount: totalAssets,
+      profit: totalAssets - initialAmount,
+      duration: duration,
+      aiComment: generateAIComment(),
+      strategy: 'AI 추천 중심',
+      difficulty: 'normal'
+    };
+
+    const existingResults = await AsyncStorage.getItem('simulationHistory');
+    const results = existingResults ? JSON.parse(existingResults) : [];
+    results.unshift(simulationResult);
+    
+    if (results.length > 50) {
+      results.splice(50);
     }
-  };
+    
+    await AsyncStorage.setItem('simulationHistory', JSON.stringify(results));
+    
+    Alert.alert(
+      '💾 시뮬레이션 결과 저장!', 
+      `${gradeInfo.grade} 등급 결과가 이력에 저장되었습니다.`,
+      [{text: '확인', style: 'default'}]
+    );
+    
+    console.log('✅ 시뮬레이션 결과 저장 완료:', simulationResult);
+    
+  } catch (error) {
+    console.error('❌ 시뮬레이션 결과 저장 오류:', error);
+    Alert.alert('오류', '결과 저장 중 문제가 발생했습니다.');
+  }
+};
 
-  return (
-      <View style={styles.container}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>← 뒤로</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>📊 투자 성적표</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('MainDashboard')}>
-            <Text style={styles.backButton}>🏠 홈</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.content}>
-          {/* 메인 성과 */}
-          <View style={styles.scoreCard}>
-            <Text style={styles.scoreEmoji}>{gradeInfo.emoji}</Text>
-            <Text style={styles.scorePercentage}>+{returnPercentage.toFixed(1)}%</Text>
-            <Text style={styles.scoreGrade}>{gradeInfo.grade}</Text>
-            <Text style={styles.scoreDesc}>{gradeInfo.desc}</Text>
-          </View>
-
-          {/* 상세 정보 */}
-          <View style={styles.detailCard}>
-            <Text style={styles.cardTitle}>💰 투자 성과</Text>
-            <Text style={styles.detailText}>• 초기 투자: ${initialAmount.toLocaleString()}</Text>
-            <Text style={styles.detailText}>• 최종 자산: ${totalAssets.toLocaleString()}</Text>
-            <Text style={styles.detailText}>• 순수익: ${(totalAssets - initialAmount).toLocaleString()}</Text>
-            <Text style={styles.detailText}>• 투자기간: {duration}개월</Text>
-            <Text style={styles.detailText}>• 월평균: +{(returnPercentage / duration).toFixed(1)}%</Text>
-          </View>
-
-          {/* AI 코멘트 */}
-          <View style={styles.commentCard}>
-            <Text style={styles.cardTitle}>🤖 AI 투자 코치</Text>
-            <Text style={styles.commentText}>{generateAIComment()}</Text>
-          </View>
-
-          {/* 추천 */}
-          <View style={styles.recommendCard}>
-            <Text style={styles.cardTitle}>💡 다음 단계</Text>
-            <Text style={styles.recommendText}>
-              • 성공 패턴 분석하여 재현 가능한 전략 수립{'\n'}
-              • 리스크 관리 시스템 구축{'\n'}
-              • 새로운 투자 기회 발굴 (AI, 바이오, 에너지)
-            </Text>
-          </View>
-        </ScrollView>
-
-        {/* 🆕 하단 버튼들 추가 */}
-        <View style={styles.buttonSection}>
-          <TouchableOpacity
-              style={[styles.actionButton, {backgroundColor: '#007AFF'}]}
-              onPress={() => navigation.navigate('SimulationSetup')}
-          >
-            <Text style={styles.buttonText}>🎮 다시 시뮬레이션</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-              style={[styles.actionButton, {backgroundColor: '#28a745'}]}
-              onPress={() => navigation.navigate('MainDashboard')}
-          >
-            <Text style={styles.buttonText}>🏠 메인으로</Text>
-          </TouchableOpacity>
-        </View>
+return (
+    <View style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backButton}>← 뒤로</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>📊 투자 성적표</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('MainDashboard')}>
+          <Text style={styles.backButton}>🏠 홈</Text>
+        </TouchableOpacity>
       </View>
-  );
+
+      <ScrollView style={styles.content}>
+        {/* 메인 성과 */}
+        <View style={styles.scoreCard}>
+          <Text style={styles.scoreEmoji}>{gradeInfo.emoji}</Text>
+          <Text style={styles.scorePercentage}>+{returnPercentage.toFixed(1)}%</Text>
+          <Text style={styles.scoreGrade}>{gradeInfo.grade}</Text>
+          <Text style={styles.scoreDesc}>{gradeInfo.desc}</Text>
+        </View>
+
+        {/* 상세 정보 */}
+        <View style={styles.detailCard}>
+          <Text style={styles.cardTitle}>💰 {username}님의 투자 성과</Text> {/* 👈 사용자 이름 추가 */}
+          <Text style={styles.detailText}>• 초기 투자: ${initialAmount.toLocaleString()}</Text>
+          <Text style={styles.detailText}>• 최종 자산: ${totalAssets.toLocaleString()}</Text>
+          <Text style={styles.detailText}>• 순수익: ${(totalAssets - initialAmount).toLocaleString()}</Text>
+          <Text style={styles.detailText}>• 투자기간: {duration}개월</Text>
+          <Text style={styles.detailText}>• 월평균: +{(returnPercentage / duration).toFixed(1)}%</Text>
+        </View>
+
+        {/* AI 코멘트 */}
+        <View style={styles.commentCard}>
+          <Text style={styles.cardTitle}>🤖 {username}님을 위한 AI 투자 코치</Text>
+          <Text style={styles.commentText}>{aiComment}</Text>
+        </View>
+
+        {/* 추천 */}
+        <View style={styles.recommendCard}>
+          <Text style={styles.cardTitle}>💡 다음 단계</Text>
+          <Text style={styles.recommendText}>
+            • 성공 패턴 분석하여 재현 가능한 전략 수립{'\n'}
+            • 리스크 관리 시스템 구축{'\n'}
+            • 새로운 투자 기회 발굴 (AI, 바이오, 에너지)
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* 시뮬레이션 성과 이력 버튼 */}
+      <TouchableOpacity
+          style={[styles.actionButton, {backgroundColor: '#FF6B35', marginBottom: 12}]}
+          onPress={() => navigation.navigate('SimulationHistory')}
+      >
+        <Text style={styles.buttonText}>📊 나의 성과 이력</Text>
+      </TouchableOpacity>
+
+      {/* 👇 바로 여기에 저장 버튼 추가! */}
+      <TouchableOpacity
+          style={[styles.actionButton, {backgroundColor: '#28a745', marginBottom: 12}]}
+          onPress={saveSimulationResult}
+      >
+        <Text style={styles.buttonText}>💾 결과 저장</Text>
+      </TouchableOpacity>
+      {/* 🆕 하단 버튼들 추가 */}
+      <View style={styles.buttonSection}>
+        <TouchableOpacity
+            style={[styles.actionButton, {backgroundColor: '#007AFF'}]}
+            onPress={() => navigation.navigate('SimulationSetup')}
+        >
+          <Text style={styles.buttonText}>🎮 다시 시뮬레이션</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+            style={[styles.actionButton, {backgroundColor: '#28a745'}]}
+            onPress={() => navigation.navigate('MainDashboard')}
+        >
+          <Text style={styles.buttonText}>🏠 메인으로</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+);
 }
 
 const styles = StyleSheet.create({
