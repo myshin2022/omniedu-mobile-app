@@ -1,4 +1,5 @@
 // App.js (완전히 수정된 버전)
+import {UserProvider} from './context/UserContext';
 import React, {useState} from 'react';
 import {StatusBar} from 'expo-status-bar';
 import {StyleSheet, View, Text, Alert} from 'react-native';
@@ -7,6 +8,7 @@ import MainDashboardScreen from './screens/MainDashboardScreen';
 import TransactionHistory from './src/components/TransactionHistory';
 import SimulationTransactionHistory from './src/components/SimulationTransactionHistory';
 import SimulationHistory from './src/components/SimulationHistory';
+import PremiumUpgrade from './screens/PremiumUpgrade';
 
 // StockListScreen을 dynamic import로 시도
 let StockListScreen = null;
@@ -347,39 +349,40 @@ export default function App() {
   };
 
   return (
-      <View style={styles.container}>
-        {/* 디버깅용 상태 표시 */}
-        <View style={{
-          position: 'absolute',
-          top: 50,
-          left: 20,
-          zIndex: 1000,
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          padding: 10,
-          borderRadius: 5
-        }}>
-          <Text style={{color: 'white', fontSize: 12}}>
-            현재 화면: {currentScreen}
-          </Text>
-          <Text style={{color: 'white', fontSize: 12}}>
-            로그인 상태: {isLoggedIn ? '✅ 로그인됨' : '❌ 로그아웃'}
-          </Text>
-          <Text style={{color: 'white', fontSize: 12}}>
-            StockList: {StockListScreen ? '✅ 로드됨' : '❌ 로드 실패'}
-          </Text>
-          {userInfo && (
-              <Text style={{color: 'white', fontSize: 12}}>
-                사용자: {userInfo.username}
-              </Text>
-          )}
-        </View>
+      <UserProvider>
+        <View style={styles.container}>
+          {/* 디버깅용 상태 표시 */}
+          <View style={{
+            position: 'absolute',
+            top: 50,
+            left: 20,
+            zIndex: 1000,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            padding: 10,
+            borderRadius: 5
+          }}>
+            <Text style={{color: 'white', fontSize: 12}}>
+              현재 화면: {currentScreen}
+            </Text>
+            <Text style={{color: 'white', fontSize: 12}}>
+              로그인 상태: {isLoggedIn ? '✅ 로그인됨' : '❌ 로그아웃'}
+            </Text>
+            <Text style={{color: 'white', fontSize: 12}}>
+              StockList: {StockListScreen ? '✅ 로드됨' : '❌ 로드 실패'}
+            </Text>
+            {userInfo && (
+                <Text style={{color: 'white', fontSize: 12}}>
+                  사용자: {userInfo.username}
+                </Text>
+            )}
+          </View>
 
-        {renderScreen()}
-        <StatusBar style="auto"/>
-      </View>
+          {renderScreen()}
+          <StatusBar style="auto"/>
+        </View>
+      </UserProvider>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -396,3 +399,4 @@ const styles = StyleSheet.create({
     color: '#dc3545',
   },
 });
+
