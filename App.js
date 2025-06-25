@@ -142,9 +142,30 @@ export default function App() {
         } else {
           Alert.alert('오류', 'SimulationGameScreen을 로드할 수 없습니다.');
         }
+
+      } else if (screenName === 'SimulationGame') {
+        console.log('🎮 시뮬레이션 게임 화면으로 이동 중...');
+        console.log('🔍 현재 화면:', currentScreen);
+        console.log('🔍 SimulationGameScreen 존재:', !!SimulationGameScreen);
+        if (SimulationGameScreen) {
+          console.log('✅ setCurrentScreen("SimulationGame") 호출');
+          setCurrentScreen('SimulationGame');
+        } else {
+          Alert.alert('오류', 'SimulationGameScreen을 로드할 수 없습니다.');
+        }
+
       } else if (screenName === 'InvestmentReportCard') {
         console.log('📊 투자 성적표 화면으로 이동 중...');
-
+      } else if (screenName === 'SimulationGame') {
+        console.log('🎮 시뮬레이션 게임 화면으로 이동 중...');
+        console.log('🔍 현재 화면:', currentScreen);
+        console.log('🔍 SimulationGameScreen 존재:', !!SimulationGameScreen);
+        if (SimulationGameScreen) {
+          console.log('✅ setCurrentScreen("SimulationGame") 호출');
+          setCurrentScreen('SimulationGame');
+        } else {
+          Alert.alert('오류', 'SimulationGameScreen을 로드할 수 없습니다.');
+        }
         if (params?.simulationResults) {
           console.log('💾 실제 시뮬레이션 결과 수신:', params.simulationResults);
           setSimulationResults(params.simulationResults);
