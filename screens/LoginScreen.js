@@ -1,12 +1,13 @@
 // screens/LoginScreen.js
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import {View, Text, StyleSheet, TextInput, TouchableOpacity, Alert} from 'react-native';
 import axios from 'axios';
+import {useUser} from '../context/UserContext';
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({navigation}) => {
   const [usernameOrEmail, setUsernameOrEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-
+  const {loginUser} = useUser();
   const FLASK_API_BASE_URL = 'https://learntoinvestai.com';
 
   const handleLogin = async () => {
@@ -33,18 +34,21 @@ const LoginScreen = ({ navigation }) => {
 
       if (response.data.success) {
         console.log('🎉 Login successful:', response.data);
-        
+
+        // 🆕 UserContext에 사용자 정보 저장
+        const userInfo = {
+          userId: response.data.user_id,
+          username: response.data.username,
+          email: response.data.email,
+        };
+
+        await loginUser(userInfo);
+
         // 메인 대시보드로 이동
         console.log('📱 네비게이션 호출 전...');
-        navigation.navigate('MainDashboard', {
-          userInfo: {
-            user_id: response.data.user_id,
-            username: response.data.username,
-            email: response.data.email,
-          }
-        });
+        navigation.navigate('MainDashboard', {userInfo});
         console.log('📱 네비게이션 호출 완료!');
-        
+
         Alert.alert('로그인 성공', response.data.message);
       } else {
         Alert.alert('로그인 실패', response.data.message || '알 수 없는 오류가 발생했습니다.');
@@ -52,9 +56,9 @@ const LoginScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.log('🔥 전체 에러 객체:', error);
-      
+
       let errorMessage = '네트워크 오류 또는 서버에 연결할 수 없습니다.';
-      
+
       if (error.response) {
         console.log('📡 서버 응답 에러:', {
           status: error.response.status,
@@ -93,7 +97,7 @@ const LoginScreen = ({ navigation }) => {
   const testServerConnection = async () => {
     try {
       console.log('🔍 서버 연결 테스트 시작...');
-      const response = await axios.get(`${FLASK_API_BASE_URL}/`, { timeout: 5000 });
+      const response = await axios.get(`${FLASK_API_BASE_URL}/`, {timeout: 5000});
       console.log('✅ 서버 연결 성공:', response.status);
       Alert.alert('연결 테스트', '서버 연결 성공!');
     } catch (error) {
@@ -109,43 +113,43 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>투자 코치 📈</Text>
-      <Text style={styles.subtitle}>AI와 함께하는 스마트 투자</Text>
-      
-      {/* 개발용 빠른 로그인 버튼 */}
-      <TouchableOpacity style={[styles.button, styles.quickLoginButton]} onPress={quickLogin}>
-        <Text style={styles.buttonText}>테스트 계정으로 빠른 로그인</Text>
-      </TouchableOpacity>
-      
-      {/* 서버 연결 테스트 버튼 */}
-      <TouchableOpacity style={[styles.button, styles.testButton]} onPress={testServerConnection}>
-        <Text style={styles.buttonText}>서버 연결 테스트</Text>
-      </TouchableOpacity>
+      <View style={styles.container}>
+        <Text style={styles.title}>투자 코치 📈</Text>
+        <Text style={styles.subtitle}>AI와 함께하는 스마트 투자</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="사용자 이름 또는 이메일"
-        value={usernameOrEmail}
-        onChangeText={setUsernameOrEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>로그인</Text>
-      </TouchableOpacity>
+        {/* 개발용 빠른 로그인 버튼 */}
+        <TouchableOpacity style={[styles.button, styles.quickLoginButton]} onPress={quickLogin}>
+          <Text style={styles.buttonText}>테스트 계정으로 빠른 로그인</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity onPress={navigateToRegister}>
-        <Text style={styles.linkText}>계정이 없으신가요? 회원가입</Text>
-      </TouchableOpacity>
-    </View>
+        {/* 서버 연결 테스트 버튼 */}
+        <TouchableOpacity style={[styles.button, styles.testButton]} onPress={testServerConnection}>
+          <Text style={styles.buttonText}>서버 연결 테스트</Text>
+        </TouchableOpacity>
+
+        <TextInput
+            style={styles.input}
+            placeholder="사용자 이름 또는 이메일"
+            value={usernameOrEmail}
+            onChangeText={setUsernameOrEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+        />
+        <TextInput
+            style={styles.input}
+            placeholder="비밀번호"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+        />
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>로그인</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={navigateToRegister}>
+          <Text style={styles.linkText}>계정이 없으신가요? 회원가입</Text>
+        </TouchableOpacity>
+      </View>
   );
 };
 
