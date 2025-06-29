@@ -225,8 +225,30 @@ const MainDashboardScreen = ({navigation}) => {
           <TouchableOpacity
               style={[styles.actionButton, styles.buyButton]}
               onPress={() => {
-                console.log('주식 거래 화면으로 이동');
-                navigation.navigate('StockList');
+                console.log('보유 주식 관리로 이동');
+                // 보유 주식이 있으면 포트폴리오 상세로, 없으면 주식 목록으로
+                if (portfolioData && portfolioData.portfolio && portfolioData.portfolio.length > 0) {
+                  // 보유 주식이 있으면 → 포트폴리오 상세 관리
+                  Alert.alert('포트폴리오 관리', '보유 주식을 관리하시겠습니까?', [
+                    {text: '취소', style: 'cancel'},
+                    {
+                      text: '개별 분석 보기',
+                      onPress: () => {
+                        // 첫 번째 보유 주식의 상세 분석으로 이동 (배열에서 ticker 추출)
+                        const firstStock = portfolioData.portfolio[0].ticker;
+                        console.log('선택된 주식:', firstStock);
+                        navigation.navigate('StockDetail', {symbol: firstStock});
+                      }
+                    },
+                    {
+                      text: '전체 주식 목록',
+                      onPress: () => navigation.navigate('StockList')
+                    }
+                  ]);
+                } else {
+                  // 보유 주식이 없으면 → 주식 매수하러 이동
+                  navigation.navigate('StockList');
+                }
               }}
           >
             <Text style={styles.actionButtonText}>주식 거래</Text>

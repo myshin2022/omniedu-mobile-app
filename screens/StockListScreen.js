@@ -26,7 +26,7 @@ const StockListScreen = ({ navigation }) => {
     try {
       console.log('📈 주식 데이터 요청 중...');
       console.log('🔗 API URL:', `${FLASK_API_BASE_URL}/api/all_stocks_data`);
-      
+
       const response = await axios.get(`${FLASK_API_BASE_URL}/api/all_stocks_data`, {
         timeout: 15000,
         headers: {
@@ -42,13 +42,13 @@ const StockListScreen = ({ navigation }) => {
       console.log('🔍 에러 상세 정보:');
       console.log('  - 에러 코드:', error.code);
       console.log('  - 에러 메시지:', error.message);
-      
+
       if (error.response) {
         console.log('  - 응답 상태:', error.response.status);
         console.log('  - 응답 데이터:', error.response.data);
         console.log('  - 응답 헤더:', error.response.headers);
       }
-      
+
       let errorMessage = '주식 데이터를 불러올 수 없습니다.';
       if (error.response?.status === 401) {
         errorMessage = '로그인이 필요합니다.';
@@ -59,9 +59,9 @@ const StockListScreen = ({ navigation }) => {
       } else if (error.request) {
         errorMessage = '네트워크 연결을 확인하세요.';
       }
-      
+
       Alert.alert('오류', errorMessage);
-      
+
       // 테스트용 더미 데이터 (개발 중에만 사용)
       console.log('🧪 테스트용 더미 데이터 사용');
       setStocksData([
@@ -119,7 +119,7 @@ const StockListScreen = ({ navigation }) => {
             try {
               console.log(`💰 ${ticker} ${quantity}주 매수 시도...`);
               console.log(`💰 예상 비용: ${(price * quantity).toFixed(2)}`);
-              
+
               const response = await axios.post(`${FLASK_API_BASE_URL}/api/buy`, {
                 ticker: ticker,
                 quantity: parseInt(quantity)
@@ -148,7 +148,7 @@ const StockListScreen = ({ navigation }) => {
               console.log('  - 상태 코드:', error.response?.status);
               console.log('  - 응답 데이터:', error.response?.data);
               console.log('  - 에러 메시지:', error.message);
-              
+
               let errorMessage = '매수 요청 중 오류가 발생했습니다.';
               if (error.response?.status === 400) {
                 errorMessage = error.response?.data?.message || '잘못된 요청입니다. 수량이나 잔고를 확인해주세요.';
@@ -221,11 +221,14 @@ const StockListScreen = ({ navigation }) => {
   };
 
   // 검색 필터링
-  const filteredStocks = stocksData.filter(stock =>
-    stock.ticker.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    stock.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // 검색 필터링 (안전한 버전)
+  const filteredStocks = stocksData.filter(stock => {
+    const query = (searchQuery || '').toLowerCase();
+    const ticker = (stock.ticker || '').toLowerCase();
+    const name = (stock.name || '').toLowerCase();
 
+    return ticker.includes(query) || name.includes(query);
+  });
   // 로딩 화면
   if (loading) {
     return (
@@ -238,13 +241,14 @@ const StockListScreen = ({ navigation }) => {
 
   // 주식 항목 렌더링
   const renderStockItem = (stock) => {
-    const { ticker, name, price, ai_insight } = stock;
-    
+    const { ticker, name, current_price, ai_insight } = stock;
+    const price = current_price || 0;
+
     // AI 인사이트에서 추천 등급 추출 (간단한 파싱)
     const getBuyRating = (insight) => {
-      if (insight.includes('BUY')) return { rating: 'BUY', color: '#28a745' };
-      if (insight.includes('SELL')) return { rating: 'SELL', color: '#dc3545' };
-      if (insight.includes('HOLD')) return { rating: 'HOLD', color: '#ffc107' };
+      if ((insight || '').includes('BUY')) return { rating: 'BUY', color: '#28a745' };
+      if ((insight || '').includes('SELL')) return { rating: 'SELL', color: '#dc3545' };
+      if ((insight || '').includes('HOLD')) return { rating: 'HOLD', color: '#ffc107' };
       return { rating: 'N/A', color: '#6c757d' };
     };
 
@@ -265,13 +269,13 @@ const StockListScreen = ({ navigation }) => {
           <View style={styles.priceContainer}>
             <Text style={styles.priceText}>${price.toFixed(2)}</Text>
             <View style={styles.buttonContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.actionButton, styles.buyButton]}
                 onPress={() => buyStock(ticker, price)}
               >
                 <Text style={styles.actionButtonText}>매수</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.actionButton, styles.sellButton]}
                 onPress={() => sellStock(ticker, price)}
               >
@@ -282,7 +286,7 @@ const StockListScreen = ({ navigation }) => {
         </View>
 
         {/* AI 인사이트 (간략 표시) */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.insightContainer}
           onPress={() => {
             Alert.alert(
@@ -294,7 +298,7 @@ const StockListScreen = ({ navigation }) => {
           }}
         >
           <Text style={styles.insightText} numberOfLines={2}>
-            {ai_insight.length > 100 ? `${ai_insight.substring(0, 100)}...` : ai_insight}
+            {(ai_insight || '').length > 100 ? `${(ai_insight || '').substring(0, 100)}...` : (ai_insight || 'AI 분석 정보가 없습니다.')}
           </Text>
           <Text style={styles.viewMoreText}>자세히 보기 →</Text>
         </TouchableOpacity>
@@ -306,7 +310,7 @@ const StockListScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.navigate('MainDashboard')}
         >
@@ -314,19 +318,19 @@ const StockListScreen = ({ navigation }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>주식 거래</Text>
         <View style={styles.headerButtons}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.performanceButton}
             onPress={() => navigation.navigate('Performance')}
           >
             <Text style={styles.performanceButtonText}>📊</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.logoutButton}
             onPress={() => {
               Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
                 { text: '취소', style: 'cancel' },
-                { 
-                  text: '로그아웃', 
+                {
+                  text: '로그아웃',
                   style: 'destructive',
                   onPress: () => navigation.navigate('Login')
                 }
@@ -365,7 +369,7 @@ const StockListScreen = ({ navigation }) => {
             filteredStocks.map(renderStockItem)
           )}
         </View>
-        
+
         {/* 하단 여백 */}
         <View style={styles.bottomSpacing} />
       </ScrollView>

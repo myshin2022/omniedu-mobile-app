@@ -85,7 +85,7 @@ const StockDetail = ({ route, navigation }) => {
     try {
       // 🟢 강제 생성 파라미터 추가
       console.log(`AI 분석 강제 새로고침 요청: ${symbol} for ${currentSimDate}`);
-      
+
       const response = await axios.get(`${FLASK_API_BASE_URL}/api/stock_data/${symbol}/${currentSimDate}?force_generate=true`);
       const data = response.data;
 
@@ -95,13 +95,13 @@ const StockDetail = ({ route, navigation }) => {
         if (data.price !== undefined) {
           setCurrentPrice(data.price);
         }
-        
+
         // 강제 생성 여부에 따라 메시지 변경
-        const message = data.force_generated 
-          ? '새로운 AI 분석이 생성되었습니다!' 
+        const message = data.force_generated
+          ? '새로운 AI 분석이 생성되었습니다!'
           : 'AI 분석이 업데이트되었습니다.';
         Alert.alert('성공', message);
-        
+
         console.log(`AI 분석 업데이트 완료 - 강제 생성: ${data.force_generated}`);
       } else {
         Alert.alert('분석 실패', 'AI 분석을 가져오지 못했습니다.');
@@ -109,7 +109,7 @@ const StockDetail = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('AI analysis update error:', error);
-      
+
       // 에러 상세 정보 표시
       let errorMessage = 'AI 분석 요청 중 오류가 발생했습니다.';
       if (error.response) {
@@ -120,7 +120,7 @@ const StockDetail = ({ route, navigation }) => {
       } else if (error.request) {
         errorMessage += '\n서버에 연결할 수 없습니다.';
       }
-      
+
       Alert.alert('분석 오류', errorMessage);
       setAiInsight("AI 코치: AI 분석 요청 중 오류 발생.");
     } finally {
@@ -278,16 +278,16 @@ const StockDetail = ({ route, navigation }) => {
 
       {/* 매수/매도 버튼 */}
       <View style={styles.tradeButtons}>
-        <TouchableOpacity 
-          style={styles.buyButton} 
-          onPress={handleBuy} 
+        <TouchableOpacity
+          style={styles.buyButton}
+          onPress={handleBuy}
           disabled={loading || currentPrice <= 0}
         >
           <Text style={styles.buttonText}>매수</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.sellButton} 
-          onPress={handleSell} 
+        <TouchableOpacity
+          style={styles.sellButton}
+          onPress={handleSell}
           disabled={loading || currentPrice <= 0}
         >
           <Text style={styles.buttonText}>매도</Text>
@@ -296,28 +296,32 @@ const StockDetail = ({ route, navigation }) => {
 
       {/* 네비게이션 버튼들 - 시뮬레이션용 */}
       <View style={styles.navigationButtons}>
-        <TouchableOpacity 
-          style={styles.navButton} 
+        <TouchableOpacity
+          style={styles.navButton}
           onPress={() => {
+            console.log('🔙 뒤로가기 버튼 클릭');
             if (navigation && navigation.goBack) {
+              console.log('✅ goBack() 사용');
               navigation.goBack();
             } else if (navigation && navigation.navigate) {
-              navigation.navigate('SimulationGame');
+              console.log('🏠 메인 대시보드로 이동');
+              navigation.navigate('MainDashboard');  // 👈 SimulationGame 대신 MainDashboard
             } else {
+              console.log('❌ 네비게이션 불가');
               Alert.alert('알림', '이전 화면으로 돌아갈 수 없습니다.');
             }
-          }} 
+          }}
           disabled={loading}
         >
           <Text style={styles.navButtonText}>⬅️ 뒤로가기</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navButton} 
+        <TouchableOpacity
+          style={styles.navButton}
           onPress={() => {
             if (navigation && navigation.navigate) {
               navigation.navigate('StockList');
             }
-          }} 
+          }}
           disabled={loading}
         >
           <Text style={styles.navButtonText}>📊 주식 목록</Text>
