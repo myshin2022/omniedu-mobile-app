@@ -1,13 +1,15 @@
 // SimulationSetupScreen.js (시뮬레이션 데이터 완전 분리)
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
+import AsyncStorage from '@react-native-async-storage/async-storage'; // 상단에 추가
+
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
   Alert,
-  Switch 
+  Switch
 } from 'react-native';
 
 // 🎮 시뮬레이션 전용 깨끗한 데이터
@@ -37,34 +39,105 @@ export default function SimulationSetupScreen({ navigation }) {
   useEffect(() => {
     console.log('🎮 시뮬레이션 설정 화면 로드됨');
     console.log('🧹 시뮬레이션 데이터 초기화:', SIMULATION_INITIAL_DATA);
-    
+
     // 시뮬레이션 모드에서는 항상 깨끗한 데이터로 시작
     setSimulationPortfolio(SIMULATION_INITIAL_DATA);
   }, []);
 
-  const handleStartSimulation = () => {
+  const handleStartSimulation = async () => {
     console.log('🎮 시뮬레이션 시작 - 설정:', config);
     console.log('💰 시뮬레이션 초기 자금:', simulationPortfolio.balance);
     console.log('📊 시뮬레이션 초기 포트폴리오:', simulationPortfolio.portfolio);
 
+    try {
+      // 시뮬레이션 횟수 확인
+      const simulationCount = await AsyncStorage.getItem('simulationCount');
+      const count = parseInt(simulationCount) || 0;
+
+      console.log('📊 시뮬레이션 경험 횟수:', count);
+
+      if (count === 0) {
+        // 🎓 첫 번째 - 오리엔테이션 필수
+        Alert.alert(
+          '🎓 환영합니다!',
+          '첫 번째 시뮬레이션이시네요!\n투자 기초와 기업 정보를 먼저 알아보시겠어요?',
+          [
+            { text: '취소', style: 'cancel' },
+            {
+              text: '네, 배워보겠습니다!',
+              onPress: () => navigation.navigate('SimulationOrientation', {
+                config: config,
+                simulationData: simulationPortfolio
+              })
+            }
+          ]
+        );
+      } else if (count === 1) {
+        // 🤔 두 번째 - 오리엔테이션 선택
+        Alert.alert(
+          '🤔 오리엔테이션',
+          '투자 기초와 기업 정보를 다시 보시겠어요?\n(복습하면 더 도움될 거예요!)',
+          [
+            {
+              text: '바로 시작',
+              onPress: () => startSimulationDirectly()
+            },
+            {
+              text: '복습하기',
+              onPress: () => navigation.navigate('SimulationOrientation', {
+                config: config,
+                simulationData: simulationPortfolio
+              })
+            }
+          ]
+        );
+      } else {
+        // 🚀 세 번째 이후 - 바로 시작 옵션
+        Alert.alert(
+          '🚀 시뮬레이션 시작',
+          '바로 시뮬레이션을 시작하시겠어요?',
+          [
+            {
+              text: '오리엔테이션 보기',
+              onPress: () => navigation.navigate('SimulationOrientation', {
+                config: config,
+                simulationData: simulationPortfolio
+              })
+            },
+            {
+              text: '바로 시작!',
+              onPress: () => startSimulationDirectly()
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('시뮬레이션 횟수 확인 오류:', error);
+      // 오류 시 바로 시작
+      startSimulationDirectly();
+    }
+  };
+
+  // 바로 시뮬레이션 시작하는 함수 (기존 로직)
+  const startSimulationDirectly = () => {
     Alert.alert(
       '🎮 시뮬레이션 시작!',
       `설정 확인:
-• 기간: ${config.startDate} ~ ${config.endDate}
-• 초기 자금: $${simulationPortfolio.balance.toLocaleString()}
-• 난이도: ${config.difficulty}
-• AI 코치: ${config.enableAI ? '활성화' : '비활성화'}
-• 거래 주기: ${config.tradingInterval}
+- 기간: ${config.startDate} ~ ${config.endDate}
+- 초기 자금: $${simulationPortfolio.balance.toLocaleString()}
+- 난이도: ${config.difficulty}
+- AI 코치: ${config.enableAI ? '활성화' : '비활성화'}
+- 거래 주기: ${config.tradingInterval}
 
 ⚠️ 이것은 연습용 시뮬레이션입니다.
 실제 포트폴리오에는 영향을 주지 않습니다!`,
       [
         { text: '설정 변경', style: 'cancel' },
-        { 
-          text: '시작!', 
+        {
+          text: '시작!',
           onPress: () => {
             // 시뮬레이션 진행 화면으로 이동 (깨끗한 데이터와 함께)
-            navigation.navigate('SimulationProgress', { 
+            navigation.navigate('SimulationProgress', {
               config: config,
               simulationData: simulationPortfolio  // 깨끗한 시뮬레이션 데이터 전달
             });
@@ -75,13 +148,14 @@ export default function SimulationSetupScreen({ navigation }) {
   };
 
   const handleResetSimulation = () => {
+
     Alert.alert(
       '🧹 시뮬레이션 초기화',
       '시뮬레이션 데이터를 완전히 초기화하시겠습니까?\n\n• 자금: $100,000로 리셋\n• 보유 주식: 모두 삭제\n• 거래 내역: 모두 삭제',
       [
         { text: '취소', style: 'cancel' },
-        { 
-          text: '초기화', 
+        {
+          text: '초기화',
           style: 'destructive',
           onPress: () => {
             setSimulationPortfolio(SIMULATION_INITIAL_DATA);
@@ -104,7 +178,7 @@ export default function SimulationSetupScreen({ navigation }) {
     <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.navigate('MainDashboard')}
         >
@@ -126,7 +200,7 @@ export default function SimulationSetupScreen({ navigation }) {
         {/* 시뮬레이션 설정 */}
         <View style={styles.configCard}>
           <Text style={styles.configTitle}>⚙️ 시뮬레이션 설정</Text>
-          
+
           {/* 시작 날짜 */}
           <View style={styles.configRow}>
             <Text style={styles.configLabel}>📅 시작 날짜</Text>
@@ -217,14 +291,14 @@ export default function SimulationSetupScreen({ navigation }) {
 
         {/* 액션 버튼들 */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.resetButton}
             onPress={handleResetSimulation}
           >
             <Text style={styles.resetButtonText}>🧹 시뮬레이션 초기화</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.startButton}
             onPress={handleStartSimulation}
           >

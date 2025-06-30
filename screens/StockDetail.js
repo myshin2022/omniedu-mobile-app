@@ -8,7 +8,13 @@ import { useUser } from '../context/UserContext'; // 사용자 컨텍스트 임�
 import * as SecureStore from 'expo-secure-store'; // 토큰 저장용 (사용하지 않으면 제거 가능)
 
 const StockDetail = ({ route, navigation }) => {
-  const { symbol, fromSimulation } = route.params;
+  const { symbol, fromSimulation, simulationDate } = route.params || {};
+  // 🧪 디버깅 로그도 추가
+  console.log('📊 StockDetail 파라미터 확인:');
+  console.log('- symbol:', symbol);
+  console.log('- fromSimulation:', fromSimulation, typeof fromSimulation);
+  console.log('- simulationDate:', simulationDate);
+  console.log('- route.params 전체:', route.params);
   const { userInfo, isLoggedIn } = useUser(); // 사용자 정보 가져오기
 
   const [stockData, setStockData] = useState(null);

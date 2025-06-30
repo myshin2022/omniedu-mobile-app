@@ -10,6 +10,7 @@ import SimulationTransactionHistory from './src/components/SimulationTransaction
 import SimulationHistory from './src/components/SimulationHistory';
 import PremiumUpgrade from './screens/PremiumUpgrade';
 import StockDetail from './screens/StockDetail';
+import SimulationOrientation from './screens/SimulationOrientation';
 
 // StockListScreen을 dynamic import로 시도
 let StockListScreen = null;
@@ -74,7 +75,8 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('Login');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
-  const [simulationResults, setSimulationResults] = useState(null); // 👈 여기에 추가!
+  const [simulationResults, setSimulationResults] = useState(null);
+  const [orientationParams, setOrientationParams] = useState(null);
 
   const [selectedStock, setSelectedStock] = useState(null);
 
@@ -147,6 +149,16 @@ export default function App() {
           Alert.alert('오류', 'SimulationSetupScreen을 로드할 수 없습니다.');
         }
 
+      } else if (screenName === 'SimulationOrientation') {
+        console.log('🎓 시뮬레이션 오리엔테이션 화면으로 이동 중...');
+        if (SimulationOrientation) {
+          setCurrentScreen('SimulationOrientation');
+          if (params) {
+            console.log('📋 오리엔테이션 파라미터:', params);
+          }
+        } else {
+          Alert.alert('오류', 'SimulationOrientation을 로드할 수 없습니다.');
+        }
       } else if (screenName === 'SimulationProgress') {
         console.log('🎮 시뮬레이션 진행 화면으로 이동 중...');
         console.log('🔍 현재 화면:', currentScreen);
@@ -204,13 +216,13 @@ export default function App() {
       case 'Login':
         return <LoginScreen navigation={mockNavigation} />;
 
-      case 'APITest': case 'StockDetail':
+      case 'SimulationOrientation':
         return (
-          <StockDetail
+          <SimulationOrientation
             navigation={mockNavigation}
             route={{
               params: {
-                symbol: selectedStock
+                // 필요한 파라미터들 (config, simulationData 등)
               }
             }}
           />

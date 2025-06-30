@@ -1,4 +1,4 @@
-// SimulationGameScreen.js (수정된 버전)
+// SimulationGameScreen.js (13개 종목 + 확장 가능한 비동기 구조)
 import React, { useState, useEffect } from 'react';
 import '../apiTest'  // 🧪 이 한 줄만 임시 추가!
 
@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  FlatList
+  FlatList,
+  Modal  // 👈 추가
 } from 'react-native';
 
 export default function SimulationGameScreen({ navigation, route }) {
@@ -25,17 +26,210 @@ export default function SimulationGameScreen({ navigation, route }) {
     user_id: 'simulation_user',
     username: 'simulation_mode'
   });
-  const showStockDetail = (symbol) => {
-    navigation.navigate('StockDetail', {
-      symbol: symbol,
-      fromSimulation: true  // 👈 이 파라미터 추가
-    });
+
+  // 🔍 분석 모달 표시 함수
+  const showQuickAnalysis = (symbol) => {
+    console.log('🔍 분석 버튼 클릭됨:', symbol);  // 👈 이 로그 추가
+
+    setSelectedStockForAnalysis(symbol);
+    setAnalysisModalVisible(true);
   };
+
+  // 🔍 모달 닫기 함수
+  const closeAnalysisModal = () => {
+    setAnalysisModalVisible(false);
+    setSelectedStockForAnalysis(null);
+  };
+
+  // 🔄 비동기 구조를 위한 새로운 상태들
+  const [simulationStocks, setSimulationStocks] = useState([]);
+  const [stocksLoading, setStocksLoading] = useState(true);
+  const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
+  const [selectedStockForAnalysis, setSelectedStockForAnalysis] = useState(null);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [totalSteps] = useState(parseInt(config?.totalSteps || '24')); // 24개월로 확장!
   const [currentDate, setCurrentDate] = useState(config?.startDate || '2023-01-01');
 
-  // 🤖 AI 코치 조언 시스템 (24개월 시나리오별)
+  // 🔍 기업 분석 요약 데이터 (오리엔테이션 내용 기반)
+  const stockAnalysisData = {
+    AAPL: {
+      name: "Apple Inc.",
+      summary: "혁신의 아이콘",
+      keyPoints: [
+        "• iPhone부터 Vision Pro까지 혁신적 제품 라인업",
+        "• 안정적인 수익과 강력한 브랜드 파워",
+        "• 서비스 수익(앱스토어, 아이클라우드) 지속 성장",
+        "• 세계에서 가장 가치 있는 기업 중 하나"
+      ],
+      recommendation: "🍎 안정적인 장기 투자처로 적합. 브랜드 파워와 서비스 확장성이 강점."
+    },
+    MSFT: {
+      name: "Microsoft Corp.",
+      summary: "클라우드와 AI의 황제",
+      keyPoints: [
+        "• Azure + ChatGPT 파트너십으로 AI 분야 선도",
+        "• 오피스, 윈도우의 안정적 수익 기반",
+        "• 기업용 소프트웨어에서 절대 강자",
+        "• 클라우드 시장 2위, 꾸준한 성장"
+      ],
+      recommendation: "☁️ 클라우드와 AI 성장의 핵심 수혜주. 안정적이면서도 성장성 높음."
+    },
+    NVDA: {
+      name: "NVIDIA Corp.",
+      summary: "AI 혁명의 심장",
+      keyPoints: [
+        "• GPU로 AI 시대를 이끄는 핵심 기업",
+        "• 게임용 그래픽카드에서 AI 칩 제왕으로",
+        "• ChatGPT 등 AI 서비스의 필수 인프라",
+        "• AI 붐으로 폭발적 성장 중"
+      ],
+      recommendation: "🤖 AI 혁명의 최대 수혜주. 높은 성장성과 함께 변동성도 큼."
+    },
+    TSLA: {
+      name: "Tesla Inc.",
+      summary: "전기차 혁명의 선구자",
+      keyPoints: [
+        "• 머스크의 비전이 현실로, 전기차 시장 선도",
+        "• 자동차 + 에너지 + 기술 회사의 복합체",
+        "• 자율주행, 로봇, 우주사업까지 확장",
+        "• 혁신적이지만 변동성이 큰 주식"
+      ],
+      recommendation: "🚗 전기차와 자율주행의 미래. 높은 잠재력과 함께 리스크도 높음."
+    },
+    GOOGL: {
+      name: "Google/Alphabet",
+      summary: "검색의 제왕",
+      keyPoints: [
+        "• 광고 수익의 절대 강자, 검색 시장 독점",
+        "• YouTube, 안드로이드, 클라우드까지",
+        "• AI 분야에서도 경쟁력 확보 중",
+        "• 안정적인 광고 수익 기반"
+      ],
+      recommendation: "🔍 인터넷 광고 시장의 왕. 안정적 수익과 AI 성장 동력 보유."
+    },
+    AMZN: {
+      name: "Amazon",
+      summary: "이커머스 + 클라우드 제국",
+      keyPoints: [
+        "• AWS가 수익의 핵심, 클라우드 1위",
+        "• 온라인 쇼핑몰에서 시작해 종합 기술기업으로",
+        "• 물류, 광고, 엔터테인먼트까지 확장",
+        "• 다각화된 비즈니스 모델"
+      ],
+      recommendation: "📦 이커머스와 클라우드 양쪽 모두 강함. 장기 성장 스토리 견고."
+    },
+    META: {
+      name: "Meta Platforms",
+      summary: "SNS 제국에서 메타버스로",
+      keyPoints: [
+        "• 페이스북, 인스타그램으로 30억 사용자 보유",
+        "• 전 세계 소셜 플랫폼의 절대 강자",
+        "• VR/AR 메타버스 기술에 대규모 투자",
+        "• 광고 수익 기반의 안정적 비즈니스"
+      ],
+      recommendation: "👥 소셜미디어 독점과 메타버스 투자. 현재 수익과 미래 기술 병행."
+    },
+    QQQ: {
+      name: "Invesco QQQ",
+      summary: "나스닥 100 ETF",
+      keyPoints: [
+        "• 한 번에 100개 기술주에 분산투자",
+        "• Apple, Microsoft, NVIDIA 등 톱 기업들 포함",
+        "• 개별 주식 리스크를 줄이는 효과",
+        "• 기술주 전반의 성장에 투자"
+      ],
+      recommendation: "📈 기술주 분산투자의 정석. 안정성과 성장성의 균형."
+    },
+    SPY: {
+      name: "SPDR S&P 500",
+      summary: "미국 대표 500개 기업",
+      keyPoints: [
+        "• 가장 안정적인 미국 주식 투자 방법",
+        "• 미국 경제 전체의 성장에 투자",
+        "• 장기 투자자들이 선호하는 핵심 자산",
+        "• 낮은 수수료, 높은 유동성"
+      ],
+      recommendation: "🇺🇸 가장 안전한 미국 투자. 장기 투자의 기본이 되는 자산."
+    },
+    SOXL: {
+      name: "Direxion Semiconductor",
+      summary: "반도체 3배 레버리지",
+      keyPoints: [
+        "• 반도체 시장의 3배 변동성 추종",
+        "• AI, 스마트폰, 자동차 등 모든 곳에 필요한 반도체",
+        "• 고위험 고수익의 대표적 ETF",
+        "• 시장 상승 시 큰 수익, 하락 시 큰 손실"
+      ],
+      recommendation: "💾 반도체 붐 수혜 극대화. 높은 리스크와 함께 높은 수익 가능성."
+    },
+    NFLX: {
+      name: "Netflix Inc.",
+      summary: "스트리밍의 왕",
+      keyPoints: [
+        "• 전 세계 오리지널 콘텐츠 제작 선도",
+        "• 코로나로 가속화된 OTT 시장의 1위",
+        "• 게임, 광고 등 새로운 수익원 개발",
+        "• 글로벌 엔터테인먼트 플랫폼"
+      ],
+      recommendation: "🎬 스트리밍 시장의 선두주자. 콘텐츠 경쟁 심화로 성장률 둔화 우려."
+    },
+    'ETH-USD': {
+      name: "Ethereum",
+      summary: "스마트 계약의 왕",
+      keyPoints: [
+        "• 블록체인 플랫폼의 대표주자",
+        "• DeFi, NFT 등 다양한 서비스의 기반",
+        "• 비트코인 다음으로 큰 암호화폐",
+        "• 높은 변동성과 기술적 발전"
+      ],
+      recommendation: "💎 블록체인 생태계의 중심. 높은 변동성 주의하며 소액 투자 권장."
+    },
+    'BTC-USD': {
+      name: "Bitcoin",
+      summary: "디지털 금",
+      keyPoints: [
+        "• 최초이자 가장 큰 암호화폐",
+        "• 탈중앙화 디지털 자산의 대표",
+        "• 인플레이션 헤지 자산으로 주목",
+        "• 기관 투자 증가로 안정성 개선"
+      ],
+      recommendation: "₿ 디지털 자산의 왕. 포트폴리오의 5-10% 정도만 배분 권장."
+    }
+  };
+
+  // 🚀 확장 가능한 종목 리스트 (설정으로 분리)
+  const SIMULATION_SYMBOLS = [
+    'AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', // 기존 6개
+    'META', 'QQQ', 'SPY', 'SOXL', 'NFLX', 'ETH-USD', 'BTC-USD' // 새로운 7개
+  ];
+
+  // 📊 종목 이름 매핑
+  const STOCK_NAMES = {
+    'AAPL': 'Apple Inc.',
+    'MSFT': 'Microsoft Corp.',
+    'NVDA': 'NVIDIA Corp.',
+    'TSLA': 'Tesla Inc.',
+    'GOOGL': 'Google',
+    'AMZN': 'Amazon',
+    'META': 'Meta Platforms',
+    'QQQ': 'Invesco QQQ',
+    'SPY': 'SPDR S&P 500',
+    'SOXL': 'Direxion Semiconductor',
+    'NFLX': 'Netflix Inc.',
+    'ETH-USD': 'Ethereum',
+    'BTC-USD': 'Bitcoin'
+  };
+
+  const showStockDetail = (symbol) => {
+    navigation.navigate('StockDetail', {
+      symbol: symbol,
+      fromSimulation: true,  // 👈 이 파라미터 추가
+      simulationDate: currentDate  // 시뮬레이션 날짜도 전달
+    });
+  };
+
+  // 🤖 AI 코치 조언 시스템 (24개월 시나리오별) - 확장된 종목 포함
   const getAIAdvice = (stock, step, action) => {
     const adviceDatabase = {
       // 2023년 1월 - AI 붐 시작 전
@@ -56,13 +250,17 @@ export default function SimulationGameScreen({ navigation, route }) {
           buy: "🤖 AI 코치: MSFT $235는 ChatGPT 파트너십으로 AI 분야 선두주자입니다. 안전한 매수입니다.",
           sell: "🤖 AI 코치: MSFT는 클라우드와 AI 모두 강한 종목입니다. 보유 추천합니다."
         },
-        GOOGL: {
-          buy: "🤖 AI 코치: GOOGL $89는 저평가 상태입니다. 검색과 클라우드 사업의 안정성을 고려하면 매수 적기입니다.",
-          sell: "🤖 AI 코치: GOOGL 매도보다는 AI Bard 개발 성과를 지켜보세요."
+        QQQ: {
+          buy: "🤖 AI 코치: QQQ $267은 나스닥 ETF로 기술주 분산투자에 좋습니다. AI 붐의 수혜를 받을 예정입니다.",
+          sell: "🤖 AI 코치: QQQ는 장기 보유 ETF입니다. 기술주 전반의 성장을 기대해보세요."
         },
-        AMZN: {
-          buy: "🤖 AI 코치: AMZN $103은 클라우드 AWS의 성장성을 고려하면 매수 기회입니다.",
-          sell: "🤖 AI 코치: AMZN은 이커머스와 클라우드 양쪽 모두 성장 동력이 있습니다."
+        SPY: {
+          buy: "🤖 AI 코치: SPY $391은 안전한 분산투자 수단입니다. 시장 전체의 성장에 참여할 수 있습니다.",
+          sell: "🤖 AI 코치: SPY는 핵심 보유 자산입니다. 장기적 관점에서 보유를 추천합니다."
+        },
+        'BTC-USD': {
+          buy: "🤖 AI 코치: BTC $16,625는 암호화폐 겨울 이후 저점입니다. 2024년 반감기를 앞두고 매수 기회일 수 있습니다.",
+          sell: "🤖 AI 코치: BTC는 변동성이 큰 자산입니다. 장기 보유 또는 일부 차익실현을 고려하세요."
         }
       },
       // 2023년 2월 - AI 붐 초기 폭발
@@ -78,6 +276,10 @@ export default function SimulationGameScreen({ navigation, route }) {
         MSFT: {
           buy: "🤖 AI 코치: MSFT +7% 안정적 상승. ChatGPT 효과가 본격화되고 있습니다.",
           sell: "🤖 AI 코치: MSFT는 장기 보유주로 적합합니다."
+        },
+        QQQ: {
+          buy: "🤖 AI 코치: QQQ도 AI 붐의 수혜를 받고 있습니다. 기술주 ETF로 분산 효과를 누리세요.",
+          sell: "🤖 AI 코치: QQQ는 기술주 상승장에서 핵심 보유 자산입니다."
         }
       },
       // 2023년 5월 - AI 붐 가속화
@@ -85,6 +287,10 @@ export default function SimulationGameScreen({ navigation, route }) {
         NVDA: {
           buy: "🤖 AI 코치: NVDA $379! AI 붐이 절정으로 치닫고 있습니다. 하지만 여전히 상승 여력이 있습니다.",
           sell: "🤖 AI 코치: 고점 대비 일부 차익실현은 현명합니다. 하지만 전량 매도는 성급할 수 있습니다."
+        },
+        SOXL: {
+          buy: "🤖 AI 코치: SOXL은 반도체 3배 레버리지 ETF입니다. AI 붐으로 큰 수익을 기대할 수 있지만 위험도 높습니다.",
+          sell: "🤖 AI 코치: SOXL은 변동성이 매우 큽니다. 적절한 수익 실현을 고려하세요."
         }
       },
       // 2024년 1월 - AI 붐 재점화
@@ -92,6 +298,10 @@ export default function SimulationGameScreen({ navigation, route }) {
         NVDA: {
           buy: "🤖 AI 코치: NVDA $634! 2024년에도 AI 성장세가 계속됩니다. 기업들의 AI 투자가 본격화되고 있습니다.",
           sell: "🤖 AI 코치: 고평가 구간입니다. 일부 수익 실현을 고려해보세요."
+        },
+        'ETH-USD': {
+          buy: "🤖 AI 코치: ETH는 AI와 블록체인 융합 트렌드의 수혜를 받을 수 있습니다. 스마트 컨트랙트 활용도가 증가하고 있습니다.",
+          sell: "🤖 AI 코치: ETH는 기술적 발전이 지속되고 있습니다. 장기 관점에서 보유를 고려하세요."
         }
       },
       // 2024년 11월 - 트럼프 효과
@@ -103,6 +313,10 @@ export default function SimulationGameScreen({ navigation, route }) {
         TSLA: {
           buy: "🤖 AI 코치: 트럼프-머스크 관계로 TSLA가 +57% 폭등! 모멘텀은 강하지만 고점 매수 주의.",
           sell: "🤖 AI 코치: TSLA 트럼프 랠리로 급등했습니다. 일부 수익 실현 좋은 타이밍입니다."
+        },
+        'BTC-USD': {
+          buy: "🤖 AI 코치: 트럼프의 친암호화폐 정책으로 BTC가 급등하고 있습니다. 하지만 고점 매수는 주의하세요.",
+          sell: "🤖 AI 코치: BTC 트럼프 랠리로 큰 폭 상승했습니다. 일부 수익 실현을 고려해보세요."
         }
       }
     };
@@ -112,32 +326,46 @@ export default function SimulationGameScreen({ navigation, route }) {
       return monthAdvice[stock.symbol][action];
     }
 
-    // 기본 조언
+    // 기본 조언 (확장된 종목 포함)
     const basicAdvice = {
-      buy: `🤖 AI 코치: ${stock.symbol} 매수를 결정하셨습니다. 현재가 ${stock.price}에서 분할 매수 전략을 추천합니다.`,
+      buy: `🤖 AI 코치: ${stock.symbol} 매수를 결정하셨습니다. 현재가 $${stock.price}에서 분할 매수 전략을 추천합니다.`,
       sell: `🤖 AI 코치: ${stock.symbol} 매도 결정입니다. 수익 실현 또는 손절의 타이밍을 잘 판단하셨습니다.`
     };
 
     return basicAdvice[action];
   };
 
-  // 포트폴리오 분석 및 조언
+  // 포트폴리오 분석 및 조언 (확장된 종목 포함)
   const getPortfolioAdvice = () => {
     const totalStocks = Object.keys(simPortfolio.portfolio).length;
-    const techStocks = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'].filter(
+    const techStocks = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NFLX'].filter(
+      symbol => simPortfolio.portfolio[symbol]
+    ).length;
+    const etfStocks = ['QQQ', 'SPY', 'SOXL'].filter(
+      symbol => simPortfolio.portfolio[symbol]
+    ).length;
+    const cryptoStocks = ['BTC-USD', 'ETH-USD'].filter(
       symbol => simPortfolio.portfolio[symbol]
     ).length;
 
     if (totalStocks === 0) {
-      return "🎯 포트폴리오 조언: 분산 투자를 시작하세요. NVDA, MSFT 등 AI 관련주와 안정주 조합을 추천합니다.";
+      return "🎯 포트폴리오 조언: 분산 투자를 시작하세요. NVDA, MSFT 등 AI 관련주와 SPY, QQQ 등 ETF 조합을 추천합니다.";
     }
 
     if (techStocks / totalStocks > 0.8) {
       return "⚠️ 포트폴리오 조언: 기술주 비중이 과도합니다. SPY, QQQ 등 ETF로 분산 투자를 고려하세요.";
     }
 
+    if (cryptoStocks > 0 && cryptoStocks / totalStocks > 0.3) {
+      return "⚠️ 포트폴리오 조언: 암호화폐 비중이 높습니다. 변동성이 큰 자산이므로 적절한 비중 조절을 고려하세요.";
+    }
+
     if (currentStep <= 6 && !simPortfolio.portfolio['NVDA']) {
       return "💡 포트폴리오 조언: 2023년 상반기에 NVDA 미보유는 아쉽습니다. AI 붐 수혜주 검토를 추천합니다.";
+    }
+
+    if (etfStocks === 0 && totalStocks > 3) {
+      return "💡 포트폴리오 조언: 개별주 중심 포트폴리오입니다. SPY나 QQQ 같은 ETF 추가를 고려해보세요.";
     }
 
     return "✅ 포트폴리오 조언: 균형잡힌 포트폴리오입니다. 현재 전략을 유지하세요.";
@@ -340,21 +568,108 @@ export default function SimulationGameScreen({ navigation, route }) {
     ]
   };
 
-  // 현재 단계에 맞는 주식 데이터 가져오기
-  const getCurrentStocks = () => {
-    return monthlyStockData[currentStep] || monthlyStockData[1];
+  // 🔄 확장 가능한 비동기 함수로 변경 (API 준비되면 전환 가능)
+  const getCurrentStocks = async () => {
+    try {
+      // 🎯 나중에 API 호출로 쉽게 전환 가능
+      // const response = await fetch(`${API_BASE_URL}/api/simulation/stocks/${getCurrentDateString()}`);
+      // const result = await response.json();
+      // if (result.success) {
+      //   return result.stocks;
+      // }
+
+      // 현재는 하드코딩 데이터 + 확장된 종목
+      const baseStocks = monthlyStockData[currentStep] || monthlyStockData[1];
+      const additionalStocks = getAdditionalStocks();
+
+      return [...baseStocks, ...additionalStocks];
+
+    } catch (error) {
+      console.error('주식 데이터 로딩 실패:', error);
+      // 폴백: 기존 데이터만
+      return monthlyStockData[currentStep] || monthlyStockData[1];
+    }
   };
 
-  const simulationStocks = getCurrentStocks();
+  // 🆕 추가 종목 데이터 생성 (임시 - 나중에 API로 교체)
+  const getAdditionalStocks = () => {
+    const additionalSymbols = ['META', 'QQQ', 'SPY', 'SOXL', 'NFLX', 'ETH-USD', 'BTC-USD'];
 
+    // 간단한 가격 생성 로직 (나중에 실제 데이터로 교체 가능)
+    return additionalSymbols.map(symbol => ({
+      symbol,
+      name: STOCK_NAMES[symbol],
+      price: generatePrice(symbol, currentStep),
+      change: generateChange(),
+      changeValue: generateChangeValue()
+    }));
+  };
+
+  // 🎲 임시 가격 생성 함수들 (나중에 제거)
+  const generatePrice = (symbol, step) => {
+    const basePrices = {
+      'META': 120.34, 'QQQ': 267.58, 'SPY': 391.99, 'SOXL': 15.67,
+      'NFLX': 337.84, 'ETH-USD': 1547.32, 'BTC-USD': 16625.08
+    };
+
+    // 단계별 변동성 적용
+    const volatility = {
+      'META': 0.15, 'QQQ': 0.08, 'SPY': 0.05, 'SOXL': 0.25,
+      'NFLX': 0.12, 'ETH-USD': 0.20, 'BTC-USD': 0.30
+    };
+
+    const basePrice = basePrices[symbol];
+    const vol = volatility[symbol];
+    const growth = 1 + (step * 0.02) + (Math.random() - 0.5) * vol;
+
+    return parseFloat((basePrice * growth).toFixed(2));
+  };
+
+  const generateChange = () => {
+    const change = (Math.random() - 0.5) * 10; // -5% ~ +5%
+    return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+  };
+
+  const generateChangeValue = () => {
+    const change = (Math.random() - 0.5) * 40; // -20 ~ +20
+    return `${change >= 0 ? '+' : ''}${change.toFixed(2)}`;
+  };
+
+  // 📅 날짜 변환 유틸리티 (API 연동 시 필요)
+  const getCurrentDateString = () => {
+    const startDate = new Date('2023-01-15');
+    startDate.setMonth(startDate.getMonth() + (currentStep - 1));
+    return startDate.toISOString().split('T')[0];
+  };
+
+  // 🔄 useEffect 수정 - 비동기 데이터 로딩
   useEffect(() => {
     console.log('🎮 시뮬레이션 게임 시작!');
     console.log('⚙️ 설정:', config);
     console.log('💰 시뮬레이션 초기 데이터:', simPortfolio);
     console.log('📅 시작 날짜:', currentDate);
-  }, []);
 
-  // 주식 매수 함수 (AI 코치 조언 포함)
+    // 주식 데이터 로딩
+    loadStockData();
+  }, [currentStep]); // currentStep 변경 시에도 다시 로딩
+
+  // 🆕 데이터 로딩 함수
+  const loadStockData = async () => {
+    setStocksLoading(true);
+    try {
+      const stocks = await getCurrentStocks();
+      setSimulationStocks(stocks);
+      console.log('📊 주식 데이터 로딩 완료:', stocks.length, '개 종목');
+    } catch (error) {
+      console.error('📊 주식 데이터 로딩 실패:', error);
+      // 최종 폴백
+      setSimulationStocks(monthlyStockData[currentStep] || monthlyStockData[1]);
+    } finally {
+      setStocksLoading(false);
+    }
+  };
+
+  // 주식 매수 함수 (AI 코치 조언 포함) - 수정 없음
   const buyStock = (stock, quantity) => {
     const totalCost = stock.price * quantity;
 
@@ -401,7 +716,7 @@ export default function SimulationGameScreen({ navigation, route }) {
     );
   };
 
-  // 주식 매도 함수 (AI 코치 조언 포함)
+  // 주식 매도 함수 (AI 코치 조언 포함) - 수정 없음
   const sellStock = (stock, quantity) => {
     const holding = simPortfolio.portfolio[stock.symbol];
 
@@ -447,7 +762,7 @@ export default function SimulationGameScreen({ navigation, route }) {
     );
   };
 
-  // 수량 입력 함수 (자유로운 수량 선택!)
+  // 수량 입력 함수 (자유로운 수량 선택!) - 수정 없음
   const showQuantityInput = (stock, action) => {
     const maxAffordable = Math.floor(simPortfolio.balance / stock.price);
     const holding = simPortfolio.portfolio[stock.symbol]?.quantity || 0;
@@ -487,13 +802,12 @@ export default function SimulationGameScreen({ navigation, route }) {
     );
   };
 
-  // 🏆 투자 성과 평가 시스템
+  // 🏆 투자 성과 평가 시스템 - 수정된 버전
   const calculatePerformanceMetrics = () => {
     // 현재 포트폴리오 총 가치 계산
-    const currentStocks = getCurrentStocks();
     const portfolioValue = Object.keys(simPortfolio.portfolio).reduce((total, symbol) => {
       const holding = simPortfolio.portfolio[symbol];
-      const currentStock = currentStocks.find(s => s.symbol === symbol);
+      const currentStock = simulationStocks.find(s => s.symbol === symbol);
       const currentPrice = currentStock ? currentStock.price : holding.avg_price;
       return total + (holding.quantity * currentPrice);
     }, 0);
@@ -518,7 +832,7 @@ export default function SimulationGameScreen({ navigation, route }) {
     };
   };
 
-  // 벤치마크 수익률 계산 (2023-2024 S&P 500 근사치)
+  // 벤치마크 수익률 계산 (2023-2024 S&P 500 근사치) - 수정 없음
   const getBenchmarkReturn = () => {
     const monthlyReturns = {
       1: 0, 2: -2.4, 3: 3.5, 4: 1.5, 5: 0.4, 6: 6.5,
@@ -536,7 +850,7 @@ export default function SimulationGameScreen({ navigation, route }) {
     return (cumulativeReturn - 1) * 100;
   };
 
-  // 투자 등급 계산
+  // 투자 등급 계산 - 수정 없음
   const getInvestmentGrade = (returnPercentage) => {
     if (returnPercentage >= 200) {
       return {
@@ -583,7 +897,7 @@ export default function SimulationGameScreen({ navigation, route }) {
     }
   };
 
-  // 거래 분석 (수정된 버전)
+  // 거래 분석 (수정된 버전) - 수정 없음
   const analyzeTradeHistory = () => {
     const trades = simPortfolio.transactions.filter(t => t.includes('매수') || t.includes('매도'));
     const buyTrades = trades.filter(t => t.includes('매수')).length;
@@ -604,7 +918,7 @@ export default function SimulationGameScreen({ navigation, route }) {
     };
   };
 
-  // 다음 단계로 진행 (성과 평가 포함)
+  // 다음 단계로 진행 (성과 평가 포함) - 수정 없음
   const nextStep = () => {
     if (currentStep >= totalSteps) {
       const metrics = calculatePerformanceMetrics();
@@ -682,14 +996,14 @@ ${grade.grade}
     }
   };
 
-  // 주식 거래 알림
+  // 주식 거래 알림 - 수정 없음
   const showTradeDialog = (stock) => {
     const holding = simPortfolio.portfolio[stock.symbol]?.quantity || 0;
     const maxAffordable = Math.floor(simPortfolio.balance / stock.price);
 
     Alert.alert(
       `📈 ${stock.symbol} 거래`,
-      `${stock.name}\n현재가: $${stock.price}\n변동: ${stock.change} (${stock.changeValue})\n\n💼 보유 수량: ${holding}주\n💰 현재 잔액: $${simPortfolio.balance.toFixed(2)}\n📊 최대 매수 가능: ${maxAffordable}주`,
+      `${stock.name}\n현재가: ${stock.price}\n변동: ${stock.change} (${stock.changeValue})\n\n💼 보유 수량: ${holding}주\n💰 현재 잔액: ${simPortfolio.balance.toFixed(2)}\n📊 최대 매수 가능: ${maxAffordable}주`,
       [
         { text: '❌ 취소', style: 'cancel' },
         { text: '📈 매수하기', onPress: () => showQuantityInput(stock, 'buy') },
@@ -701,8 +1015,7 @@ ${grade.grade}
     );
   };
 
-  // 주식 아이템 렌더링
-  // 수정된 renderStockItem - 상세보기 버튼 추가
+  // 주식 아이템 렌더링 - 수정 없음
   const renderStockItem = ({ item }) => (
     <View style={styles.stockItemContainer}>
       {/* 기존 터치 영역 - 매매 다이얼로그 */}
@@ -731,7 +1044,7 @@ ${grade.grade}
       {/* 새로 추가된 상세보기 버튼 */}
       <TouchableOpacity
         style={styles.detailButton}
-        onPress={() => showStockDetail(item.symbol)}
+        onPress={() => showQuickAnalysis(item.symbol)}
       >
         <Text style={styles.detailButtonText}>📊</Text>
       </TouchableOpacity>
@@ -775,13 +1088,22 @@ ${grade.grade}
 
       {/* 주식 목록 */}
       <View style={styles.stockSection}>
-        <Text style={styles.sectionTitle}>📈 거래 가능 주식 (탭해서 자유롭게 매매)</Text>
-        <FlatList
-          data={simulationStocks}
-          renderItem={renderStockItem}
-          keyExtractor={(item) => item.symbol}
-          style={styles.stockList}
-        />
+        <Text style={styles.sectionTitle}>
+          📈 거래 가능 주식 ({simulationStocks.length}개 종목)
+        </Text>
+
+        {stocksLoading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>📊 주식 데이터 로딩 중...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={simulationStocks}
+            renderItem={renderStockItem}
+            keyExtractor={(item) => item.symbol}
+            style={styles.stockList}
+          />
+        )}
       </View>
 
       {/* 액션 버튼 */}
@@ -795,9 +1117,60 @@ ${grade.grade}
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
-  );
-}
+    {/* 🔍 분석 모달 */}
+    <Modal
+      visible={analysisModalVisible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={closeAnalysisModal}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <ScrollView style={styles.modalScrollView}>
+            {/* 모달 헤더 */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                📊 {selectedStockForAnalysis && stockAnalysisData[selectedStockForAnalysis]?.name}
+              </Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={closeAnalysisModal}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 기업 요약 */}
+            {selectedStockForAnalysis && stockAnalysisData[selectedStockForAnalysis] && (
+              <View style={styles.analysisContent}>
+                <Text style={styles.summaryText}>
+                  {stockAnalysisData[selectedStockForAnalysis].summary}
+                </Text>
+                
+                {/* 핵심 포인트 */}
+                <View style={styles.keyPointsContainer}>
+                  <Text style={styles.sectionTitle}>🔍 핵심 포인트</Text>
+                  {stockAnalysisData[selectedStockForAnalysis].keyPoints.map((point, index) => (
+                    <Text key={index} style={styles.keyPointText}>{point}</Text>
+                  ))}
+                </View>
+
+                {/* 투자 추천 */}
+                <View style={styles.recommendationContainer}>
+                  <Text style={styles.sectionTitle}>💡 투자 관점</Text>
+                  <Text style={styles.recommendationText}>
+                    {stockAnalysisData[selectedStockForAnalysis].recommendation}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  </View>  // 👈 새로운 최종 컨테이너 닫기
+);  // 👈 return 끝
+}   
 
 const styles = StyleSheet.create({
   container: {
@@ -897,6 +1270,18 @@ const styles = StyleSheet.create({
   stockList: {
     flex: 1,
   },
+  // 🆕 로딩 관련 스타일 추가
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    fontStyle: 'italic',
+  },
   // 🔄 수정된 stockItemContainer (새로 추가)
   stockItemContainer: {
     flexDirection: 'row',
@@ -978,5 +1363,73 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '90%',
+    maxHeight: '80%',
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+  },
+  modalScrollView: {
+    maxHeight: 500,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingBottom: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1565c0',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 5,
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: '#666',
+  },
+  analysisContent: {
+    padding: 10,
+  },
+  modalSummaryText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  keyPointsContainer: {
+    marginBottom: 10,
+  },
+  recommendationContainer: {
+    marginTop: 10,
+  },
+  keyPointText: {
+    fontSize: 14,
+    color: '#444',
+    marginBottom: 5,
+    lineHeight: 20,
+  },
+  recommendationText: {
+    fontSize: 14,
+    color: '#2e7d32',
+    fontStyle: 'italic',
+    padding: 10,
+    backgroundColor: '#f1f8e9',
+    borderRadius: 8,
   },
 });
