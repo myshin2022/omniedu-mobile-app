@@ -8,7 +8,7 @@ import { useUser } from '../context/UserContext'; // 사용자 컨텍스트 임�
 import * as SecureStore from 'expo-secure-store'; // 토큰 저장용 (사용하지 않으면 제거 가능)
 
 const StockDetail = ({ route, navigation }) => {
-  const { symbol } = route.params;
+  const { symbol, fromSimulation } = route.params;
   const { userInfo, isLoggedIn } = useUser(); // 사용자 정보 가져오기
 
   const [stockData, setStockData] = useState(null);
@@ -300,12 +300,17 @@ const StockDetail = ({ route, navigation }) => {
           style={styles.navButton}
           onPress={() => {
             console.log('🔙 뒤로가기 버튼 클릭');
-            if (navigation && navigation.goBack) {
+
+            // 시뮬레이션에서 온 경우 시뮬레이션으로 복귀
+            if (fromSimulation) {
+              console.log('🎮 시뮬레이션으로 복귀');
+              navigation.navigate('SimulationGame');
+            } else if (navigation && navigation.goBack) {
               console.log('✅ goBack() 사용');
               navigation.goBack();
             } else if (navigation && navigation.navigate) {
               console.log('🏠 메인 대시보드로 이동');
-              navigation.navigate('MainDashboard');  // 👈 SimulationGame 대신 MainDashboard
+              navigation.navigate('MainDashboard');
             } else {
               console.log('❌ 네비게이션 불가');
               Alert.alert('알림', '이전 화면으로 돌아갈 수 없습니다.');
