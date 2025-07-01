@@ -1,6 +1,6 @@
 // screens/LoginScreen.js
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import axios from 'axios';
 import { useUser } from '../context/UserContext';
 
@@ -114,6 +114,12 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* 로고 추가 */}
+      <Image
+        source={require('../assets/icon.png')}
+        style={styles.logo}
+      />
+
       <Text style={styles.title}>투자 코치 📈</Text>
       <Text style={styles.subtitle}>AI와 함께하는 스마트 투자</Text>
 
@@ -160,6 +166,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
     padding: 20,
+  },
+    logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 20,
+    alignSelf: 'center',
   },
   title: {
     fontSize: 32,
