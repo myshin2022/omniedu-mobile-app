@@ -11,9 +11,10 @@ import SimulationHistory from './src/components/SimulationHistory';
 import PremiumUpgrade from './screens/PremiumUpgrade';
 import StockDetail from './screens/StockDetail';
 import SimulationOrientation from './screens/SimulationOrientation';
+import StockListScreen from './screens/StockListScreen';
 
 // StockListScreen을 dynamic import로 시도
-let StockListScreen = null;
+
 let RegisterScreen = null;
 let PerformanceScreen = null;
 let SimulationSetupScreen = null;
@@ -21,12 +22,10 @@ let APITestScreen = null;
 let SimulationGameScreen = null;
 let InvestmentReportCard = null;
 
-try {
-  StockListScreen = require('./screens/StockListScreen').default;
-  console.log('✅ StockListScreen 로드 성공');
-} catch (error) {
-  console.log('❌ StockListScreen 로드 실패:', error.message);
-}
+console.log('🔍 StockListScreen import 직후:', typeof StockListScreen);
+console.log('🔍 StockListScreen 값:', StockListScreen);
+console.log('🔍 StockListScreen이 함수인가?', typeof StockListScreen === 'function');
+console.log('🔍 StockListScreen이 컴포넌트인가?', StockListScreen && StockListScreen.$$typeof);
 
 try {
   RegisterScreen = require('./screens/RegisterScreen').default;
@@ -248,6 +247,17 @@ export default function App() {
             onLogout={handleLogout}
           />
         );
+
+      case 'StockDetail':
+        if (StockDetail) {
+          return <StockDetail navigation={mockNavigation} route={{ params: { symbol: selectedStock } }} />;
+        } else {
+          return (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>StockDetail을 로드할 수 없습니다</Text>
+            </View>
+          );
+        }
 
       case 'StockList':
         if (StockListScreen) {
