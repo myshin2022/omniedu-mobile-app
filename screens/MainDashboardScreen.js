@@ -237,7 +237,7 @@ const MainDashboardScreen = ({navigation}) => {
                         // 첫 번째 보유 주식의 상세 분석으로 이동 (배열에서 ticker 추출)
                         const firstStock = portfolioData.portfolio[0].ticker;
                         console.log('선택된 주식:', firstStock);
-                        navigation.navigate('StockDetail', {symbol: firstStock});
+                        navigation.navigate('StockList');
                       }
                     },
                     {

@@ -1,4 +1,4 @@
-// screens/StockListScreen.js
+// screens/StockListScreen.js - 로컬 처리 업데이트
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -12,6 +12,7 @@ import {
   TextInput,
 } from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const StockListScreen = ({ navigation }) => {
   const [stocksData, setStocksData] = useState([]);
@@ -19,9 +20,49 @@ const StockListScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // 🔧 로컬 거래용 state 추가
+  const [portfolio, setPortfolio] = useState({});
+  const [balance, setBalance] = useState(100000); // 초기 잔고
+
   const FLASK_API_BASE_URL = 'https://learntoinvestai.com';
 
-  // 주식 데이터 가져오기
+  // 🔧 포트폴리오 데이터 로드
+  const loadPortfolioData = async () => {
+    try {
+      const savedPortfolio = await AsyncStorage.getItem('portfolio');
+      const savedBalance = await AsyncStorage.getItem('balance');
+
+      if (savedPortfolio) {
+        setPortfolio(JSON.parse(savedPortfolio));
+        console.log('📂 포트폴리오 로드됨:', JSON.parse(savedPortfolio));
+      }
+      if (savedBalance) {
+        setBalance(parseFloat(savedBalance));
+        console.log('💰 잔고 로드됨:', parseFloat(savedBalance));
+      }
+    } catch (error) {
+      console.log('❌ 포트폴리오 로드 오류:', error);
+    }
+  };
+
+  // 🔧 포트폴리오 데이터 저장
+  const savePortfolioData = async (newPortfolio, newBalance) => {
+    try {
+      await AsyncStorage.setItem('portfolio', JSON.stringify(newPortfolio));
+      await AsyncStorage.setItem('balance', newBalance.toString());
+      console.log('💾 포트폴리오 저장됨:', { newPortfolio, newBalance });
+    } catch (error) {
+      console.log('❌ 포트폴리오 저장 오류:', error);
+    }
+  };
+
+  // 화면 로드 시 데이터 가져오기
+  useEffect(() => {
+    loadPortfolioData(); // 포트폴리오 먼저 로드
+    fetchStocksData();
+  }, []);
+
+  // 주식 데이터 가져오기 (AI 분석용)
   const fetchStocksData = async () => {
     try {
       console.log('📈 주식 데이터 요청 중...');
@@ -68,20 +109,20 @@ const StockListScreen = ({ navigation }) => {
         {
           ticker: 'AAPL',
           name: 'Apple Inc.',
-          price: 150.00,
-          ai_insight: 'AI 코치: 테스트 데이터입니다. BUY 추천.'
+          current_price: 196.45,
+          ai_insight: 'AI 코치: 강력한 매수 추천. 애플의 혁신적인 제품 라인업과 안정적인 수익성이 기대됩니다.'
         },
         {
           ticker: 'MSFT',
           name: 'Microsoft Corp.',
-          price: 300.00,
-          ai_insight: 'AI 코치: 테스트 데이터입니다. HOLD 추천.'
+          current_price: 474.96,
+          ai_insight: 'AI 코치: 장기 보유 추천. 클라우드 사업의 지속적인 성장과 AI 투자로 밝은 전망입니다.'
         },
         {
           ticker: 'NVDA',
           name: 'NVIDIA Corporation',
-          price: 420.00,
-          ai_insight: 'AI 코치: 테스트 데이터입니다. 강력한 BUY 추천.'
+          current_price: 520.78,
+          ai_insight: 'AI 코치: AI 혁명의 핵심 기업. 데이터센터와 AI 칩 수요 급증으로 강력한 성장 전망.'
         }
       ]);
     } finally {
@@ -90,75 +131,88 @@ const StockListScreen = ({ navigation }) => {
     }
   };
 
-  // 화면 로드 시 데이터 가져오기
-  useEffect(() => {
-    fetchStocksData();
-  }, []);
-
   // 새로고침
   const onRefresh = () => {
     setRefreshing(true);
     fetchStocksData();
   };
 
-  // 주식 매수 함수
-  const buyStock = (ticker, price) => {
+  // 🔧 로컬 매수 함수 (시뮬레이션 방식)
+  const buyStock = async (ticker, price) => {
     Alert.prompt(
       '주식 매수',
-      `${ticker} (현재가: $${price.toFixed(2)})를 몇 주 매수하시겠습니까?`,
+      `${ticker} (현재가: $${price.toFixed(2)})\n현재 잔고: $${balance.toFixed(2)}\n\n몇 주 매수하시겠습니까?`,
       [
         { text: '취소', style: 'cancel' },
         {
           text: '매수',
           onPress: async (quantity) => {
-            if (!quantity || isNaN(quantity) || quantity <= 0) {
+            if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
               Alert.alert('오류', '올바른 수량을 입력해주세요.');
               return;
             }
 
-            try {
-              console.log(`💰 ${ticker} ${quantity}주 매수 시도...`);
-              console.log(`💰 예상 비용: ${(price * quantity).toFixed(2)}`);
+            const quantityNum = parseInt(quantity);
+            const totalCost = price * quantityNum;
 
-              const response = await axios.post(`${FLASK_API_BASE_URL}/api/buy`, {
-                ticker: ticker,
-                quantity: parseInt(quantity)
-              }, {
-                timeout: 10000,
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                }
-              });
+            console.log(`💰 ${ticker} ${quantityNum}주 매수 시도...`);
+            console.log(`💰 예상 비용: $${totalCost.toFixed(2)}`);
+            console.log(`💰 현재 잔고: $${balance.toFixed(2)}`);
 
-              console.log('📥 매수 응답:', response.data);
-
-              if (response.data.success) {
-                Alert.alert('매수 성공', response.data.message);
-                console.log('✅ 매수 성공:', response.data);
-                // 거래 성공 후 주식 데이터 새로고침
-                fetchStocksData();
-              } else {
-                Alert.alert('매수 실패', response.data.message);
-                console.log('❌ 매수 실패:', response.data);
-              }
-            } catch (error) {
-              console.error('❌ 매수 API 오류:', error);
-              console.log('🔍 에러 상세 정보:');
-              console.log('  - 상태 코드:', error.response?.status);
-              console.log('  - 응답 데이터:', error.response?.data);
-              console.log('  - 에러 메시지:', error.message);
-
-              let errorMessage = '매수 요청 중 오류가 발생했습니다.';
-              if (error.response?.status === 400) {
-                errorMessage = error.response?.data?.message || '잘못된 요청입니다. 수량이나 잔고를 확인해주세요.';
-              } else if (error.response?.status === 401) {
-                errorMessage = '로그인이 필요합니다.';
-              } else if (error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-              }
-              Alert.alert('매수 오류', errorMessage);
+            // 잔고 확인
+            if (totalCost > balance) {
+              Alert.alert(
+                '❌ 매수 실패',
+                `잔액이 부족합니다!\n\n필요 금액: $${totalCost.toFixed(2)}\n현재 잔액: $${balance.toFixed(2)}\n부족 금액: $${(totalCost - balance).toFixed(2)}`
+              );
+              return;
             }
+
+            // 새 잔고 계산
+            const newBalance = balance - totalCost;
+
+            // 기존 보유량 확인
+            const currentHolding = portfolio[ticker] || { quantity: 0, avg_price: 0 };
+
+            // 평균 단가 계산
+            const totalShares = currentHolding.quantity + quantityNum;
+            const totalValue = (currentHolding.avg_price * currentHolding.quantity) + totalCost;
+            const newAvgPrice = totalValue / totalShares;
+
+            // 새 포트폴리오 생성
+            const newPortfolio = {
+              ...portfolio,
+              [ticker]: {
+                quantity: totalShares,
+                avg_price: newAvgPrice,
+                symbol: ticker,
+                name: stocksData.find(stock => stock.ticker === ticker)?.name || ticker
+              }
+            };
+
+            // State 업데이트
+            setBalance(newBalance);
+            setPortfolio(newPortfolio);
+
+            // AsyncStorage에 저장
+            await savePortfolioData(newPortfolio, newBalance);
+
+            console.log('✅ 매수 성공:', {
+              ticker,
+              quantity: quantityNum,
+              price: price.toFixed(2),
+              totalCost: totalCost.toFixed(2),
+              newBalance: newBalance.toFixed(2),
+              newAvgPrice: newAvgPrice.toFixed(2),
+              totalShares
+            });
+
+            // 성공 알림
+            Alert.alert(
+              '✅ 매수 완료!',
+              `${ticker} ${quantityNum}주를 $${totalCost.toFixed(2)}에 매수했습니다!\n\n총 보유량: ${totalShares}주\n평균단가: $${newAvgPrice.toFixed(2)}\n남은 잔액: $${newBalance.toFixed(2)}`,
+              [{ text: '확인' }]
+            );
           }
         }
       ],
@@ -167,60 +221,90 @@ const StockListScreen = ({ navigation }) => {
     );
   };
 
-  // 주식 매도 함수
-  const sellStock = (ticker, price) => {
+  // 🔧 로컬 매도 함수 (시뮬레이션 방식)
+  const sellStock = async (ticker, price) => {
+    const holding = portfolio[ticker];
+    const maxQuantity = holding?.quantity || 0;
+
     Alert.prompt(
       '주식 매도',
-      `${ticker} (현재가: $${price.toFixed(2)})를 몇 주 매도하시겠습니까?`,
+      `${ticker} (현재가: $${price.toFixed(2)})\n보유량: ${maxQuantity}주\n${maxQuantity > 0 ? `평균단가: $${holding.avg_price.toFixed(2)}` : ''}\n\n몇 주 매도하시겠습니까?`,
       [
         { text: '취소', style: 'cancel' },
         {
           text: '매도',
           onPress: async (quantity) => {
-            if (!quantity || isNaN(quantity) || quantity <= 0) {
+            if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
               Alert.alert('오류', '올바른 수량을 입력해주세요.');
               return;
             }
 
-            try {
-              console.log(`💸 ${ticker} ${quantity}주 매도 시도...`);
-              const response = await axios.post(`${FLASK_API_BASE_URL}/api/sell`, {
-                ticker: ticker,
-                quantity: parseInt(quantity)
-              }, {
-                timeout: 10000,
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                }
-              });
+            const quantityNum = parseInt(quantity);
 
-              if (response.data.success) {
-                Alert.alert('매도 성공', response.data.message);
-                console.log('✅ 매도 성공:', response.data);
-                // 거래 성공 후 주식 데이터 새로고침
-                fetchStocksData();
-              } else {
-                Alert.alert('매도 실패', response.data.message);
-                console.log('❌ 매도 실패:', response.data);
-              }
-            } catch (error) {
-              console.error('❌ 매도 API 오류:', error);
-              let errorMessage = '매도 요청 중 오류가 발생했습니다.';
-              if (error.response?.data?.message) {
-                errorMessage = error.response.data.message;
-              }
-              Alert.alert('매도 오류', errorMessage);
+            console.log(`💸 ${ticker} ${quantityNum}주 매도 시도...`);
+
+            // 보유량 확인
+            if (!holding || holding.quantity < quantityNum) {
+              Alert.alert(
+                '❌ 매도 실패',
+                `보유 수량이 부족합니다!\n\n보유 수량: ${maxQuantity}주\n매도 요청: ${quantityNum}주`
+              );
+              return;
             }
+
+            const totalRevenue = price * quantityNum;
+            const profit = (price - holding.avg_price) * quantityNum;
+            const newBalance = balance + totalRevenue;
+            const remainingShares = holding.quantity - quantityNum;
+
+            // 새 포트폴리오 생성
+            const newPortfolio = { ...portfolio };
+
+            if (remainingShares === 0) {
+              // 모든 주식 매도
+              delete newPortfolio[ticker];
+            } else {
+              // 일부 매도
+              newPortfolio[ticker] = {
+                ...holding,
+                quantity: remainingShares
+              };
+            }
+
+            // State 업데이트
+            setBalance(newBalance);
+            setPortfolio(newPortfolio);
+
+            // AsyncStorage에 저장
+            await savePortfolioData(newPortfolio, newBalance);
+
+            console.log('✅ 매도 성공:', {
+              ticker,
+              quantity: quantityNum,
+              price: price.toFixed(2),
+              totalRevenue: totalRevenue.toFixed(2),
+              profit: profit.toFixed(2),
+              newBalance: newBalance.toFixed(2),
+              remainingShares
+            });
+
+            // 성공 알림
+            const profitText = profit >= 0 ? `+$${profit.toFixed(2)}` : `-$${Math.abs(profit).toFixed(2)}`;
+            const profitColor = profit >= 0 ? '🟢' : '🔴';
+
+            Alert.alert(
+              '✅ 매도 완료!',
+              `${ticker} ${quantityNum}주를 $${totalRevenue.toFixed(2)}에 매도했습니다!\n\n${profitColor} 손익: ${profitText}\n${remainingShares > 0 ? `남은 보유량: ${remainingShares}주\n` : ''}현재 잔액: $${newBalance.toFixed(2)}`,
+              [{ text: '확인' }]
+            );
           }
         }
       ],
       'plain-text',
-      '1'
+      maxQuantity > 0 ? Math.min(maxQuantity, 1).toString() : '0'
     );
   };
 
-  // 검색 필터링
   // 검색 필터링 (안전한 버전)
   const filteredStocks = stocksData.filter(stock => {
     const query = (searchQuery || '').toLowerCase();
@@ -229,6 +313,7 @@ const StockListScreen = ({ navigation }) => {
 
     return ticker.includes(query) || name.includes(query);
   });
+
   // 로딩 화면
   if (loading) {
     return (
@@ -244,11 +329,16 @@ const StockListScreen = ({ navigation }) => {
     const { ticker, name, current_price, ai_insight } = stock;
     const price = current_price || 0;
 
+    // 🔧 보유량 표시 추가
+    const holding = portfolio[ticker];
+    const holdingQuantity = holding?.quantity || 0;
+    const holdingValue = holdingQuantity * price;
+
     // AI 인사이트에서 추천 등급 추출 (간단한 파싱)
     const getBuyRating = (insight) => {
-      if ((insight || '').includes('BUY')) return { rating: 'BUY', color: '#28a745' };
-      if ((insight || '').includes('SELL')) return { rating: 'SELL', color: '#dc3545' };
-      if ((insight || '').includes('HOLD')) return { rating: 'HOLD', color: '#ffc107' };
+      if ((insight || '').includes('BUY') || (insight || '').includes('매수')) return { rating: 'BUY', color: '#28a745' };
+      if ((insight || '').includes('SELL') || (insight || '').includes('매도')) return { rating: 'SELL', color: '#dc3545' };
+      if ((insight || '').includes('HOLD') || (insight || '').includes('보유')) return { rating: 'HOLD', color: '#ffc107' };
       return { rating: 'N/A', color: '#6c757d' };
     };
 
@@ -265,6 +355,14 @@ const StockListScreen = ({ navigation }) => {
                 {ratingInfo.rating}
               </Text>
             </View>
+            {/* 🔧 보유량 정보 추가 */}
+            {holdingQuantity > 0 && (
+              <View style={styles.holdingContainer}>
+                <Text style={styles.holdingText}>
+                  보유: {holdingQuantity}주 (${holdingValue.toFixed(2)})
+                </Text>
+              </View>
+            )}
           </View>
           <View style={styles.priceContainer}>
             <Text style={styles.priceText}>${price.toFixed(2)}</Text>
@@ -276,10 +374,18 @@ const StockListScreen = ({ navigation }) => {
                 <Text style={styles.actionButtonText}>매수</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.actionButton, styles.sellButton]}
+                style={[
+                  styles.actionButton,
+                  styles.sellButton,
+                  holdingQuantity === 0 && styles.disabledButton
+                ]}
                 onPress={() => sellStock(ticker, price)}
+                disabled={holdingQuantity === 0}
               >
-                <Text style={styles.actionButtonText}>매도</Text>
+                <Text style={[
+                  styles.actionButtonText,
+                  holdingQuantity === 0 && styles.disabledButtonText
+                ]}>매도</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -317,6 +423,10 @@ const StockListScreen = ({ navigation }) => {
           <Text style={styles.backButtonText}>← 홈</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>주식 거래</Text>
+        {/* 🔧 잔고 표시 추가 */}
+        <View style={styles.balanceContainer}>
+          <Text style={styles.balanceText}>💰 ${balance.toFixed(2)}</Text>
+        </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.performanceButton}
@@ -376,7 +486,6 @@ const StockListScreen = ({ navigation }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -415,6 +524,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+  },
+  // 🔧 잔고 표시용 스타일 추가
+  balanceContainer: {
+    backgroundColor: '#28a745',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginHorizontal: 8,
+  },
+  balanceText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   placeholder: {
     width: 60, // backButton과 균형 맞추기
@@ -505,6 +627,20 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
   },
+  // 🔧 보유량 표시용 스타일 추가
+  holdingContainer: {
+    marginTop: 6,
+    backgroundColor: '#e3f2fd',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  holdingText: {
+    fontSize: 12,
+    color: '#1976d2',
+    fontWeight: '600',
+  },
   priceContainer: {
     alignItems: 'flex-end',
   },
@@ -531,10 +667,19 @@ const styles = StyleSheet.create({
   sellButton: {
     backgroundColor: '#dc3545',
   },
+  // 🔧 비활성화 버튼 스타일 추가
+  disabledButton: {
+    backgroundColor: '#6c757d',
+    opacity: 0.6,
+  },
   actionButtonText: {
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  // 🔧 비활성화 버튼 텍스트 스타일 추가
+  disabledButtonText: {
+    color: '#ccc',
   },
   insightContainer: {
     backgroundColor: '#f8f9fa',

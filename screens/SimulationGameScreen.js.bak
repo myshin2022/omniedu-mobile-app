@@ -1,5 +1,6 @@
 // SimulationGameScreen.js (13개 종목 + 확장 가능한 비동기 구조)
 import React, { useState, useEffect } from 'react';
+import '../apiTest'  // 🧪 이 한 줄만 임시 추가!
 
 import {
   View,

@@ -1,11 +1,8 @@
 // App.js (완전히 수정된 버전)
-// 🚨 긴급 로그 차단 - 폭탄 해체
-
-
-import {UserProvider} from './context/UserContext';
-import React, {useState} from 'react';
-import {StatusBar} from 'expo-status-bar';
-import {StyleSheet, View, Text, Alert} from 'react-native';
+import { UserProvider } from './context/UserContext';
+import React, { useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View, Text, Alert } from 'react-native';
 import LoginScreen from './screens/LoginScreen';
 import MainDashboardScreen from './screens/MainDashboardScreen';
 import TransactionHistory from './src/components/TransactionHistory';
@@ -21,7 +18,7 @@ import StockListScreen from './screens/StockListScreen';
 let RegisterScreen = null;
 let PerformanceScreen = null;
 let SimulationSetupScreen = null;
-
+let APITestScreen = null;
 let SimulationGameScreen = null;
 let InvestmentReportCard = null;
 
@@ -50,6 +47,13 @@ try {
   console.log('✅ SimulationSetupScreen 로드 성공');
 } catch (error) {
   console.log('❌ SimulationSetupScreen 로드 실패:', error.message);
+}
+
+try {
+  APITestScreen = require('./screens/APITestScreen').default;
+  console.log('✅ APITestScreen 로드 성공');
+} catch (error) {
+  console.log('❌ APITestScreen 로드 실패:', error.message);
 }
 
 try {
@@ -127,7 +131,7 @@ export default function App() {
       } else if (screenName === 'AIAnalysis') {
         console.log('🤖 AI 분석 화면으로 이동 중...');
         Alert.alert('AI 분석', 'AI 분석 기능은 곧 출시됩니다!\n\n현재 각 주식의 AI 인사이트는 주식 거래 화면에서 확인하실 수 있습니다.', [
-          {text: '확인', onPress: () => setCurrentScreen('MainDashboard')}
+          { text: '확인', onPress: () => setCurrentScreen('MainDashboard') }
         ]);
       } else if (screenName === 'Performance') {
         console.log('📊 성과 분석 화면으로 이동 중...');
@@ -181,25 +185,27 @@ export default function App() {
         console.log('📊 거래 내역 화면으로 이동 중...');
         setCurrentScreen('TransactionHistory');
 
-// 올바른 수정 코드
       } else if (screenName === 'SimulationTransactionHistory') {
         console.log('🎮 시뮬레이션 거래 내역 화면으로 이동 중...');
         if (params?.simulationResults) {
           setSimulationResults(params.simulationResults);
         }
         setCurrentScreen('SimulationTransactionHistory');
+
       } else if (screenName === 'SimulationHistory') {
-        console.log('📊 시뮬레이션 히스토리 화면으로 이동 중...');
+        console.log('📊 시뮬레이션 성과 이력 화면으로 이동 중...');
         setCurrentScreen('SimulationHistory');
+
+      } else if (screenName === 'APITest') {
+        console.log('🧪 API 테스트 화면으로 이동 중...');
+        if (APITestScreen) {
+          setCurrentScreen('APITest');
+        } else {
+          Alert.alert('오류', 'APITestScreen을 로드할 수 없습니다.');
+        }
       } else {
-        console.log('❓ 알 수 없는 화면:', screenName);
-        Alert.alert('오류', `화면을 찾을 수 없습니다: ${screenName}`);
+        console.log(`❓ 알 수 없는 화면: ${screenName}`);
       }
-    },  // ← navigate 함수 종료
-    
-    goBack: () => {
-      console.log('🔙 뒤로가기');
-      // 필요시 이전 화면으로 이동 로직
     }
   };
 
@@ -207,84 +213,93 @@ export default function App() {
   const renderScreen = () => {
     switch (currentScreen) {
       case 'Login':
-        return <LoginScreen navigation={mockNavigation}/>;
+        return <LoginScreen navigation={mockNavigation} />;
 
       case 'SimulationOrientation':
         return (
-            <SimulationOrientation
-                navigation={mockNavigation}
-                route={{
-                  params: {
-                    // 필요한 파라미터들 (config, simulationData 등)
-                  }
-                }}
-            />
+          <SimulationOrientation
+            navigation={mockNavigation}
+            route={{
+              params: {
+                // 필요한 파라미터들 (config, simulationData 등)
+              }
+            }}
+          />
         );
+        if (APITestScreen) {
+          return <APITestScreen navigation={mockNavigation} />;
+        } else {
+          return (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>APITestScreen을 로드할 수 없습니다</Text>
+            </View>
+          );
+        }
 
       case 'TransactionHistory':
-        return <TransactionHistory navigation={mockNavigation}/>;
+        return <TransactionHistory navigation={mockNavigation} />;
 
       case 'MainDashboard':
         return (
-            <MainDashboardScreen
-                navigation={mockNavigation}
-                userInfo={userInfo}
-                onLogout={handleLogout}
-            />
+          <MainDashboardScreen
+            navigation={mockNavigation}
+            userInfo={userInfo}
+            onLogout={handleLogout}
+          />
         );
 
       case 'StockDetail':
         if (StockDetail) {
-          return <StockDetail navigation={mockNavigation} route={{params: {symbol: selectedStock}}}/>;
+          return <StockDetail navigation={mockNavigation} route={{ params: { symbol: selectedStock } }} />;
         } else {
           return (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>StockDetail을 로드할 수 없습니다</Text>
-              </View>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>StockDetail을 로드할 수 없습니다</Text>
+            </View>
           );
         }
 
       case 'StockList':
         if (StockListScreen) {
-          return <StockListScreen navigation={mockNavigation}/>;
+          return <StockListScreen navigation={mockNavigation} />;
         } else {
           return (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>StockListScreen을 로드할 수 없습니다</Text>
-              </View>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>StockListScreen을 로드할 수 없습니다</Text>
+            </View>
           );
         }
 
       case 'Register':
         if (RegisterScreen) {
-          return <RegisterScreen navigation={mockNavigation}/>;
+          return <RegisterScreen navigation={mockNavigation} />;
         } else {
           return (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>RegisterScreen을 로드할 수 없습니다</Text>
-              </View>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>RegisterScreen을 로드할 수 없습니다</Text>
+            </View>
           );
         }
 
       case 'Performance':
         if (PerformanceScreen) {
-          return <PerformanceScreen navigation={mockNavigation}/>;
+          return <PerformanceScreen navigation={mockNavigation} />;
         } else {
           return (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>PerformanceScreen을 로드할 수 없습니다</Text>
-              </View>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>PerformanceScreen을 로드할 수 없습니다</Text>
+            </View>
           );
         }
 
       case 'SimulationSetup':
         if (SimulationSetupScreen) {
-          return <SimulationSetupScreen navigation={mockNavigation}/>;
+          return <SimulationSetupScreen navigation={mockNavigation} />;
         } else {
           return (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>SimulationSetupScreen을 로드할 수 없습니다</Text>
-              </View>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>SimulationSetupScreen을 로드할 수 없습니다</Text>
+            </View>
           );
         }
 
@@ -294,35 +309,35 @@ export default function App() {
         if (SimulationGameScreen) {
           console.log('✅ SimulationGameScreen 렌더링 시작');
           return (
-              <SimulationGameScreen
-                  navigation={mockNavigation}
-                  route={{
-                    params: {
-                      config: {
-                        startDate: '2023-01-01',
-                        endDate: '2024-12-31',
-                        totalSteps: '24',
-                        difficulty: 'normal',
-                        tradingInterval: 'monthly',
-                        enableAI: true
-                      },
-                      simulationData: {
-                        balance: 100000,
-                        portfolio: {},
-                        transactions: [],
-                        total_asset: 100000,
-                        user_id: 'simulation_user',
-                        username: 'simulation_mode'
-                      }
-                    }
-                  }}
-              />
+            <SimulationGameScreen
+              navigation={mockNavigation}
+              route={{
+                params: {
+                  config: {
+                    startDate: '2023-01-01',
+                    endDate: '2024-12-31',
+                    totalSteps: '24',
+                    difficulty: 'normal',
+                    tradingInterval: 'monthly',
+                    enableAI: true
+                  },
+                  simulationData: {
+                    balance: 100000,
+                    portfolio: {},
+                    transactions: [],
+                    total_asset: 100000,
+                    user_id: 'simulation_user',
+                    username: 'simulation_mode'
+                  }
+                }
+              }}
+            />
           );
         } else {
           return (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>SimulationGameScreen을 로드할 수 없습니다</Text>
-              </View>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>SimulationGameScreen을 로드할 수 없습니다</Text>
+            </View>
           );
         }
 
@@ -334,83 +349,83 @@ export default function App() {
           console.log('✅ InvestmentReportCard 렌더링 시작');
 
           return (
-              <InvestmentReportCard
-                  navigation={mockNavigation}
-                  route={{
-                    params: {
-                      simulationResults,
-                      username: userInfo?.username || 'Guest',
-                      level: userInfo?.level || 'beginner',
-                      email: userInfo?.email || null
-                    }
-                  }}
-              />
+            <InvestmentReportCard
+              navigation={mockNavigation}
+              route={{
+                params: {
+                  simulationResults,
+                  username: userInfo?.username || 'Guest',
+                  level: userInfo?.level || 'beginner',
+                  email: userInfo?.email || null
+                }
+              }}
+            />
           );
         } else {
           console.log('❌ InvestmentReportCard 컴포넌트 없음');
           return (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>InvestmentReportCard를 로드할 수 없습니다</Text>
-              </View>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>InvestmentReportCard를 로드할 수 없습니다</Text>
+            </View>
           );
         }
 
       case 'TransactionHistory':
-        return <TransactionHistory navigation={mockNavigation}/>;
+        return <TransactionHistory navigation={mockNavigation} />;
 
       case 'SimulationHistory':
-        return <SimulationHistory navigation={mockNavigation}/>;
+        return <SimulationHistory navigation={mockNavigation} />;
 
       case 'SimulationTransactionHistory':
         return (
-            <SimulationTransactionHistory
-                navigation={mockNavigation}
-                route={{
-                  params: {
-                    simulationResults: simulationResults
-                  }
-                }}
-            />
+          <SimulationTransactionHistory
+            navigation={mockNavigation}
+            route={{
+              params: {
+                simulationResults: simulationResults
+              }
+            }}
+          />
         );
 
       default:
-        return <LoginScreen navigation={mockNavigation}/>;
+        return <LoginScreen navigation={mockNavigation} />;
     }
   };
 
   return (
-      <UserProvider>
-        <View style={styles.container}>
-          {/* 디버깅용 상태 표시 */}
-          <View style={{
-            position: 'absolute',
-            top: 50,
-            left: 20,
-            zIndex: 1000,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            padding: 10,
-            borderRadius: 5
-          }}>
-            <Text style={{color: 'white', fontSize: 12}}>
-              현재 화면: {currentScreen}
+    <UserProvider>
+      <View style={styles.container}>
+        {/* 디버깅용 상태 표시 */}
+        <View style={{
+          position: 'absolute',
+          top: 50,
+          left: 20,
+          zIndex: 1000,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          padding: 10,
+          borderRadius: 5
+        }}>
+          <Text style={{ color: 'white', fontSize: 12 }}>
+            현재 화면: {currentScreen}
+          </Text>
+          <Text style={{ color: 'white', fontSize: 12 }}>
+            로그인 상태: {isLoggedIn ? '✅ 로그인됨' : '❌ 로그아웃'}
+          </Text>
+          <Text style={{ color: 'white', fontSize: 12 }}>
+            StockList: {StockListScreen ? '✅ 로드됨' : '❌ 로드 실패'}
+          </Text>
+          {userInfo && (
+            <Text style={{ color: 'white', fontSize: 12 }}>
+              사용자: {userInfo.username}
             </Text>
-            <Text style={{color: 'white', fontSize: 12}}>
-              로그인 상태: {isLoggedIn ? '✅ 로그인됨' : '❌ 로그아웃'}
-            </Text>
-            <Text style={{color: 'white', fontSize: 12}}>
-              StockList: {StockListScreen ? '✅ 로드됨' : '❌ 로드 실패'}
-            </Text>
-            {userInfo && (
-                <Text style={{color: 'white', fontSize: 12}}>
-                  사용자: {userInfo.username}
-                </Text>
-            )}
-          </View>
-
-          {renderScreen()}
-          <StatusBar style="auto"/>
+          )}
         </View>
-      </UserProvider>
+
+        {renderScreen()}
+        <StatusBar style="auto" />
+      </View>
+    </UserProvider>
   );
 }
 const styles = StyleSheet.create({

@@ -19,7 +19,7 @@ const StockDetail = ({ route, navigation }) => {
   const [currentSimDate, setCurrentSimDate] = useState(null); // 시뮬레이션 날짜 상태 추가
   const [historicalPrices, setHistoricalPrices] = useState([]); // 차트용 히스토리컬 가격
 
-  const FLASK_API_BASE_URL = 'https://learntoinvestai.com'; // Flask 백엔드 URL
+  const FLASK_API_BASE_URL = 'https://learntoinvestai.com';// Flask 백엔드 URL
 
   // 초기 데이터 로드 및 AI 분석 가져오기
   useEffect(() => {
@@ -85,7 +85,7 @@ const StockDetail = ({ route, navigation }) => {
     try {
       // 🟢 강제 생성 파라미터 추가
       console.log(`AI 분석 강제 새로고침 요청: ${symbol} for ${currentSimDate}`);
-      
+
       const response = await axios.get(`${FLASK_API_BASE_URL}/api/stock_data/${symbol}/${currentSimDate}?force_generate=true`);
       const data = response.data;
 
@@ -95,13 +95,13 @@ const StockDetail = ({ route, navigation }) => {
         if (data.price !== undefined) {
           setCurrentPrice(data.price);
         }
-        
+
         // 강제 생성 여부에 따라 메시지 변경
-        const message = data.force_generated 
-          ? '새로운 AI 분석이 생성되었습니다!' 
+        const message = data.force_generated
+          ? '새로운 AI 분석이 생성되었습니다!'
           : 'AI 분석이 업데이트되었습니다.';
         Alert.alert('성공', message);
-        
+
         console.log(`AI 분석 업데이트 완료 - 강제 생성: ${data.force_generated}`);
       } else {
         Alert.alert('분석 실패', 'AI 분석을 가져오지 못했습니다.');
@@ -109,7 +109,7 @@ const StockDetail = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('AI analysis update error:', error);
-      
+
       // 에러 상세 정보 표시
       let errorMessage = 'AI 분석 요청 중 오류가 발생했습니다.';
       if (error.response) {
@@ -120,7 +120,7 @@ const StockDetail = ({ route, navigation }) => {
       } else if (error.request) {
         errorMessage += '\n서버에 연결할 수 없습니다.';
       }
-      
+
       Alert.alert('분석 오류', errorMessage);
       setAiInsight("AI 코치: AI 분석 요청 중 오류 발생.");
     } finally {
@@ -128,7 +128,9 @@ const StockDetail = ({ route, navigation }) => {
     }
   };
 
-  // 매수 함수
+  // StockDetail.js - 매수/매도 함수 수정
+
+  // 🔧 매수 함수 - FormData 사용
   const handleBuy = async () => {
     if (!symbol || currentPrice === 0) {
       Alert.alert('오류', '유효하지 않은 주식 정보입니다.');
@@ -148,21 +150,38 @@ const StockDetail = ({ route, navigation }) => {
               return;
             }
 
+            console.log('💰', symbol, parseInt(quantity), '주 매수 시도...');
+            console.log('💰 예상 비용:', (currentPrice * parseInt(quantity)).toFixed(2));
+
             try {
-              const response = await axios.post(`${FLASK_API_BASE_URL}/api/buy`, {
-                ticker: symbol,
-                quantity: parseInt(quantity),
-                price: currentPrice
+              console.log('🔗 요청 URL:', `${FLASK_API_BASE_URL}/api/buy`);
+              console.log('📦 FormData 생성 중...');
+              console.log('📋 symbol:', symbol);
+              console.log('📋 quantity:', parseInt(quantity));
+
+              // 🔧 FormData 사용 (JSON 아님!)
+              const formData = new FormData();
+              formData.append('ticker', symbol);
+              formData.append('quantity', parseInt(quantity).toString());
+
+              const response = await axios.post(`${FLASK_API_BASE_URL}/api/buy`, formData, {
+                headers: {
+                  'Content-Type': 'multipart/form-data'  // JSON 아님!
+                },
+                timeout: 10000
               });
 
-              if (response.data && response.data.success) {
-                Alert.alert('성공', response.data.message);
-              } else {
-                Alert.alert('실패', response.data.message || '매수에 실패했습니다.');
-              }
+              console.log('✅ 매수 응답:', response.data);
+              Alert.alert('성공', '매수가 완료되었습니다!');
+
             } catch (error) {
-              Alert.alert('오류', '매수 요청 중 오류가 발생했습니다.');
-              console.error('Buy error:', error);
+              console.error('❌ 매수 API 오류:', error);
+              console.log('🔍 에러 상세 정보:');
+              console.log('  - 상태 코드:', error.response?.status);
+              console.log('  - 응답 데이터:', error.response?.data);
+              console.log('  - 에러 메시지:', error.message);
+
+              Alert.alert('매수 실패', '매수 요청 중 오류가 발생했습니다.');
             }
           }
         }
@@ -173,7 +192,7 @@ const StockDetail = ({ route, navigation }) => {
     );
   };
 
-  // 매도 함수
+  // 🔧 매도 함수 - FormData 사용
   const handleSell = async () => {
     if (!symbol || currentPrice === 0) {
       Alert.alert('오류', '유효하지 않은 주식 정보입니다.');
@@ -193,20 +212,32 @@ const StockDetail = ({ route, navigation }) => {
               return;
             }
 
+            console.log('💸', symbol, parseInt(quantity), '주 매도 시도...');
+
             try {
-              const response = await axios.post(`${FLASK_API_BASE_URL}/api/sell`, {
-                ticker: symbol,
-                quantity: parseInt(quantity)
+              console.log('🔗 요청 URL:', `${FLASK_API_BASE_URL}/api/buy`);
+              console.log('📦 FormData 생성 중...');
+              console.log('📋 symbol:', symbol);
+              console.log('📋 quantity:', parseInt(quantity));
+
+              // 🔧 FormData 사용
+              const formData = new FormData();
+              formData.append('ticker', symbol);
+              formData.append('quantity', parseInt(quantity).toString());
+
+              const response = await axios.post(`${FLASK_API_BASE_URL}/api/sell`, formData, {
+                headers: {
+                  'Content-Type': 'multipart/form-data'
+                },
+                timeout: 10000
               });
 
-              if (response.data && response.data.success) {
-                Alert.alert('성공', response.data.message);
-              } else {
-                Alert.alert('실패', response.data.message || '매도에 실패했습니다.');
-              }
+              console.log('✅ 매도 응답:', response.data);
+              Alert.alert('성공', '매도가 완료되었습니다!');
+
             } catch (error) {
-              Alert.alert('오류', '매도 요청 중 오류가 발생했습니다.');
-              console.error('Sell error:', error);
+              console.error('❌ 매도 API 오류:', error);
+              Alert.alert('매도 실패', '매도 요청 중 오류가 발생했습니다.');
             }
           }
         }
@@ -216,7 +247,6 @@ const StockDetail = ({ route, navigation }) => {
       'numeric'
     );
   };
-
 
   if (loading) {
     return (
@@ -278,16 +308,16 @@ const StockDetail = ({ route, navigation }) => {
 
       {/* 매수/매도 버튼 */}
       <View style={styles.tradeButtons}>
-        <TouchableOpacity 
-          style={styles.buyButton} 
-          onPress={handleBuy} 
+        <TouchableOpacity
+          style={styles.buyButton}
+          onPress={handleBuy}
           disabled={loading || currentPrice <= 0}
         >
           <Text style={styles.buttonText}>매수</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.sellButton} 
-          onPress={handleSell} 
+        <TouchableOpacity
+          style={styles.sellButton}
+          onPress={handleSell}
           disabled={loading || currentPrice <= 0}
         >
           <Text style={styles.buttonText}>매도</Text>
@@ -296,28 +326,20 @@ const StockDetail = ({ route, navigation }) => {
 
       {/* 네비게이션 버튼들 - 시뮬레이션용 */}
       <View style={styles.navigationButtons}>
-        <TouchableOpacity 
-          style={styles.navButton} 
-          onPress={() => {
-            if (navigation && navigation.goBack) {
-              navigation.goBack();
-            } else if (navigation && navigation.navigate) {
-              navigation.navigate('SimulationGame');
-            } else {
-              Alert.alert('알림', '이전 화면으로 돌아갈 수 없습니다.');
-            }
-          }} 
+        <TouchableOpacity
+          style={styles.navButton}
+          onPress={() => navigation.navigate('StockList')}
           disabled={loading}
         >
           <Text style={styles.navButtonText}>⬅️ 뒤로가기</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navButton} 
+        <TouchableOpacity
+          style={styles.navButton}
           onPress={() => {
             if (navigation && navigation.navigate) {
               navigation.navigate('StockList');
             }
-          }} 
+          }}
           disabled={loading}
         >
           <Text style={styles.navButtonText}>📊 주식 목록</Text>
