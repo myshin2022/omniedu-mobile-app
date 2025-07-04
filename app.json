@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.learntoinvestai.investmentcoach"
     },
     "android": {
       "adaptiveIcon": {

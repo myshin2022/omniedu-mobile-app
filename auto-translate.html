@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko-KR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="translate">
+    <title>AI 투자 학습 시뮬레이터</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 414px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .language-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: white;
+            border-radius: 50% 50% 0 0;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 40px 20px 20px;
+        }
+        
+        .features {
+            margin: 30px 0;
+        }
+        
+        .features h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #2c3e50;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #4facfe;
+            transition: transform 0.2s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .feature-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .feature-card p {
+            color: #6c757d;
+            line-height: 1.5;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4facfe;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 15px;
+        }
+        
+        .demo-section h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+        
+        .demo-chat {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .user-message {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        
+        .user-bubble {
+            background: #4facfe;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px 20px 5px 20px;
+            display: inline-block;
+            max-width: 80%;
+        }
+        
+        .ai-message {
+            text-align: left;
+        }
+        
+        .ai-bubble {
+            background: #f1f3f4;
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 20px 20px 20px 5px;
+            display: inline-block;
+            max-width: 80%;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            border-top: 1px solid #eee;
+            margin-top: 40px;
+        }
+        
+        .translate-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="language-indicator" id="langIndicator">언어 감지 중...</div>
+    
+    <div class="container">
+        <div id="translateNotice" class="translate-notice" style="display: none;">
+            🌍 자동 번역이 감지되었습니다. 더 나은 경험을 위해 Google 번역을 사용해보세요.
+        </div>
+        
+        <div class="header">
+            <h1 data-translate="title">🤖 AI 투자 학습 시뮬레이터</h1>
+            <p data-translate="subtitle">안전한 모의 투자로 실력을 키워보세요</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label" data-translate="free">무료 서비스</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">0원</div>
+                    <div class="stat-label" data-translate="loss">실제 손실</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label" data-translate="coach">AI 코치</div>
+                </div>
+            </div>
+            
+            <div class="cta-section">
+                <button class="start-btn" onclick="startLearning()" data-translate="start">📚 학습 시작하기</button>
+            </div>
+            
+            <div class="features">
+                <h2 data-translate="features">🎯 주요 기능</h2>
+                
+                <div class="feature-card">
+                    <h3 data-translate="simulation">📊 실시간 주식 시뮬레이션</h3>
+                    <p data-translate="simulation-desc">실제 주식 시장 데이터를 바탕으로 한 완전 안전한 모의 투자 환경에서 연습하세요.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 data-translate="ai-advice">🤖 AI 맞춤형 투자 조언</h3>
+                    <p data-translate="ai-advice-desc">당신의 투자 성향과 목표에 맞는 개인화된 투자 전략을 AI가 실시간으로 제안합니다.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 data-translate="safe-trading">🛡️ 위험 없는 모의 거래</h3>
+                    <p data-translate="safe-trading-desc">실제 돈을 잃을 위험 없이 다양한 투자 전략을 시험해보고 경험을 쌓으세요.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 data-translate="analysis">📈 투자 성과 분석</h3>
+                    <p data-translate="analysis-desc">상세한 투자 성과 리포트와 개선점을 분석하여 실력 향상을 도와드립니다.</p>
+                </div>
+            </div>
+            
+            <div class="demo-section">
+                <h3 data-translate="demo">💬 AI 코치와의 대화 예시</h3>
+                <div class="demo-chat">
+                    <div class="user-message">
+                        <div class="user-bubble" data-translate="user-msg">삼성전자 주식에 투자하고 싶은데 어떻게 생각하세요?</div>
+                    </div>
+                    <div class="ai-message">
+                        <div class="ai-bubble" data-translate="ai-msg">삼성전자는 안정적인 대형주입니다. 현재 시장 상황과 당신의 투자 목표를 고려하면, 포트폴리오의 30% 정도 비중으로 시작해보는 것을 권장합니다. 먼저 모의 투자로 연습해보세요!</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="features">
+                <h2 data-translate="why-us">🌟 왜 우리 앱을 선택해야 할까요?</h2>
+                
+                <div class="feature-card">
+                    <h3 data-translate="proven">✅ 검증된 투자 전략</h3>
+                    <p data-translate="proven-desc">실제 수익을 창출하고 있는 개발자가 직접 만든 실전 투자 노하우를 배우세요.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 data-translate="beginner">✅ 초보자 친화적</h3>
+                    <p data-translate="beginner-desc">복잡한 투자 용어와 개념을 쉽게 이해할 수 있도록 단계별로 안내합니다.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 data-translate="realtime">✅ 실시간 학습</h3>
+                    <p data-translate="realtime-desc">시장 변화에 따른 실시간 투자 기회를 놓치지 않도록 알림과 분석을 제공합니다.</p>
+                </div>
+            </div>
+            
+            <div class="cta-section">
+                <button class="start-btn" onclick="startLearning()" data-translate="start-now">🚀 지금 바로 시작하기</button>
+                <p style="margin-top: 15px; color: #6c757d;" data-translate="no-signup">회원가입 없이 바로 체험 가능!</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p data-translate="copyright">© 2024 AI 투자 학습 시뮬레이터. 모든 권리 보유.</p>
+            <p data-translate="service">안전한 투자 학습을 위한 완전 무료 서비스입니다.</p>
+        </div>
+    </div>
+    
+    <script>
+        // 번역 텍스트 데이터
+        const translations = {
+            en: {
+                title: "🤖 AI Investment Learning Simulator",
+                subtitle: "Build your skills with safe simulated investment",
+                free: "Free Service",
+                loss: "Real Loss",
+                coach: "AI Coach",
+                start: "📚 Start Learning",
+                features: "🎯 Key Features",
+                simulation: "📊 Real-time Stock Simulation",
+                "simulation-desc": "Practice in a completely safe simulated investment environment based on real stock market data.",
+                "ai-advice": "🤖 AI Personalized Investment Advice",
+                "ai-advice-desc": "AI provides personalized investment strategies in real-time based on your investment style and goals.",
+                "safe-trading": "🛡️ Risk-free Mock Trading",
+                "safe-trading-desc": "Test various investment strategies and gain experience without the risk of losing real money.",
+                analysis: "📈 Investment Performance Analysis",
+                "analysis-desc": "Detailed investment performance reports and analysis of improvements to help you improve your skills.",
+                demo: "💬 AI Coach Conversation Example",
+                "user-msg": "I want to invest in Samsung Electronics stock. What do you think?",
+                "ai-msg": "Samsung Electronics is a stable large-cap stock. Considering current market conditions and your investment goals, I recommend starting with about 30% of your portfolio. Try mock investing first!",
+                "why-us": "🌟 Why Choose Our App?",
+                proven: "✅ Proven Investment Strategies",
+                "proven-desc": "Learn practical investment know-how directly from developers who are generating real profits.",
+                beginner: "✅ Beginner Friendly",
+                "beginner-desc": "Step-by-step guidance to easily understand complex investment terms and concepts.",
+                realtime: "✅ Real-time Learning",
+                "realtime-desc": "Notifications and analysis to ensure you don't miss real-time investment opportunities based on market changes.",
+                "start-now": "🚀 Start Now",
+                "no-signup": "Experience immediately without registration!",
+                copyright: "© 2024 AI Investment Learning Simulator. All rights reserved.",
+                service: "Completely free service for safe investment learning."
+            }
+        };
+
+        function detectUserLanguage() {
+            const userLang = navigator.language || navigator.userLanguage;
+            const langIndicator = document.getElementById('langIndicator');
+            
+            console.log('Detected language:', userLang);
+            langIndicator.textContent = `Detected: ${userLang}`;
+            
+            // 영어권 사용자 감지
+            if (userLang.startsWith('en')) {
+                langIndicator.textContent = `🇺🇸 English User Detected`;
+                langIndicator.style.background = 'rgba(0, 123, 255, 0.8)';
+                
+                // 3초 후 자동 번역 실행
+                setTimeout(() => {
+                    autoTranslate('en');
+                }, 3000);
+                
+                // 번역 안내 표시
+                const notice = document.getElementById('translateNotice');
+                notice.style.display = 'block';
+                notice.innerHTML = '🌍 English user detected! Auto-translating in 3 seconds... <button onclick="autoTranslate(\'en\')" style="margin-left: 10px; padding: 5px 10px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer;">Translate Now</button>';
+            } else {
+                langIndicator.textContent = `🇰🇷 Korean User`;
+                langIndicator.style.background = 'rgba(40, 167, 69, 0.8)';
+            }
+        }
+
+        function autoTranslate(targetLang) {
+            if (!translations[targetLang]) return;
+            
+            const elements = document.querySelectorAll('[data-translate]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[targetLang][key]) {
+                    element.textContent = translations[targetLang][key];
+                }
+            });
+            
+            // 언어 표시 업데이트
+            const langIndicator = document.getElementById('langIndicator');
+            langIndicator.textContent = '🌍 Translated to English';
+            langIndicator.style.background = 'rgba(40, 167, 69, 0.8)';
+            
+            // 번역 안내 숨기기
+            const notice = document.getElementById('translateNotice');
+            notice.style.display = 'none';
+            
+            console.log('Page translated to:', targetLang);
+        }
+
+        function startLearning() {
+            const isTranslated = document.getElementById('langIndicator').textContent.includes('Translated');
+            const message = isTranslated 
+                ? '🎉 Starting investment learning!\n\nIn the actual app, step-by-step investment education will proceed with an AI coach.'
+                : '🎉 투자 학습을 시작합니다!\n\n실제 앱에서는 AI 코치와 함께 단계별 투자 교육이 진행됩니다.';
+            
+            alert(message);
+        }
+
+        // 페이지 로드 시 언어 감지 및 자동 번역
+        window.onload = function() {
+            detectUserLanguage();
+            console.log('AI Investment Learning Simulator loaded with auto-translation feature.');
+        };
+        
+        // 수동 번역 버튼 (테스트용)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'e' || e.key === 'E') {
+                autoTranslate('en');
+            }
+        });
+    </script>
+</body>
+</html>

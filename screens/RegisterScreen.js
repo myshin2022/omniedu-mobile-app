@@ -23,13 +23,13 @@ const RegisterScreen = ({ navigation }) => {
     firstName: '',
     lastName: '',
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   // 서버 URL (테스트용)
-  const FLASK_API_BASE_URL = 'http://192.168.219.107:5001';
+  const FLASK_API_BASE_URL = 'https://learntoinvestai.com';
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -41,7 +41,7 @@ const RegisterScreen = ({ navigation }) => {
   // 1단계: 폼 제출 (필드 검증)
   const handleSubmit = () => {
     console.log('📝 [USER] 폼 제출 시도');
-    
+
     // 필수 필드 검증
     if (!formData.username.trim()) {
       Alert.alert('오류', '사용자명을 입력해주세요.');
@@ -109,12 +109,12 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -211,8 +211,8 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.buttonContainer}>
             {!formSubmitted ? (
               // 1단계: 제출 버튼
-              <TouchableOpacity 
-                style={styles.submitButton} 
+              <TouchableOpacity
+                style={styles.submitButton}
                 onPress={handleSubmit}
               >
                 <Text style={styles.submitButtonText}>📝 제출</Text>
@@ -226,9 +226,9 @@ const RegisterScreen = ({ navigation }) => {
                   <Text style={styles.reviewText}>이메일: {formData.email}</Text>
                   <Text style={styles.reviewNote}>위 정보로 계정을 생성하시겠습니까?</Text>
                 </View>
-                
-                <TouchableOpacity 
-                  style={[styles.registerButton, loading && styles.buttonDisabled]} 
+
+                <TouchableOpacity
+                  style={[styles.registerButton, loading && styles.buttonDisabled]}
                   onPress={handleRegister}
                   disabled={loading}
                 >
@@ -239,7 +239,7 @@ const RegisterScreen = ({ navigation }) => {
                   )}
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.backButton}
                   onPress={() => setFormSubmitted(false)}
                 >
@@ -258,8 +258,8 @@ const RegisterScreen = ({ navigation }) => {
                     ✨ AI 투자 코치가 당신의 투자 여정을 도와드립니다!
                   </Text>
                 </View>
-                
-                <TouchableOpacity 
+
+                <TouchableOpacity
                   style={styles.startButton}
                   onPress={() => navigation.navigate('MainDashboard')}
                 >
