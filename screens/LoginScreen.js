@@ -1,5 +1,7 @@
 // screens/LoginScreen.js
-import React, { useState, useRef, useEffect } from 'react';
+// OmniEdu Global Tutor - LoginScreen with Quick Test Login
+
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,280 +9,166 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  Image,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
+  ScrollView,
   Dimensions,
 } from 'react-native';
-import axios from 'axios';
-import { useUser } from '../context/UserContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';  
+
+const { width, height } = Dimensions.get('window');
 
 const LoginScreen = ({ navigation }) => {
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  
-  const { loginUser } = useUser();
-  const FLASK_API_BASE_URL = 'https://learntoinvestai.com';
-  
-  const scrollViewRef = useRef(null);
-  const usernameRef = useRef(null);
-  const passwordRef = useRef(null);
 
-  // 키보드 이벤트 리스너
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      (e) => {
-        console.log('⌨️ 키보드 올라옴:', e.endCoordinates.height);
-        setKeyboardHeight(e.endCoordinates.height);
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        console.log('⌨️ 키보드 내려감');
-        setKeyboardHeight(0);
-      }
-    );
-
-    return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
-  }, []);
-
-  // 입력 필드 포커스 시 스크롤
-  const handleInputFocus = (inputRef, fieldName) => {
-    console.log(`🔍 ${fieldName} 입력 포커스`);
-    setTimeout(() => {
-      if (inputRef.current && scrollViewRef.current) {
-        inputRef.current.measureLayout(
-          scrollViewRef.current.getInnerViewNode(),
-          (x, y) => {
-            scrollViewRef.current.scrollTo({
-              y: y - 150, // 입력 필드 위에 충분한 여백 확보
-              animated: true,
-            });
-          }
-        );
-      }
-    }, 100);
-  };
-
-  const handleLogin = async () => {
+const handleLogin = async () => {
+  try {
+    // 입력 값 검증
     if (!usernameOrEmail || !password) {
-      Alert.alert('로그인 오류', '사용자 이름/이메일과 비밀번호를 모두 입력해주세요.');
+      Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
-    console.log('🚀 API 호출 시작:', `${FLASK_API_BASE_URL}/api/login`);
-    Keyboard.dismiss(); // 로그인 시 키보드 숨기기
+    const response = await fetch('https://omnieduglobal.com/student/api/mobile/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: usernameOrEmail,
+        password: password
+      })
+    });
 
-    try {
-      const response = await axios.post(`${FLASK_API_BASE_URL}/api/login`, {
-        username_or_email: usernameOrEmail,
-        password: password,
-      }, {
-        timeout: 10000,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        }
-      });
+    const result = await response.json();
 
-      console.log('✅ API 응답 성공:', response.data);
-
-      if (response.data.success) {
-        console.log('🎉 Login successful:', response.data);
-
-        // 🆕 UserContext에 사용자 정보 저장
-        const userInfo = {
-          userId: response.data.user.id,
-          username: response.data.user.username,
-          email: response.data.user.email,
-        };
-
-        await loginUser(userInfo);
-
-        // 메인 대시보드로 이동
-        console.log('📱 네비게이션 호출 전...');
-        navigation.navigate('MainDashboard', { userInfo });
-        console.log('📱 네비게이션 호출 완료!');
-
-        Alert.alert('로그인 성공', response.data.message);
-      } else {
-        Alert.alert('로그인 실패', response.data.message || '알 수 없는 오류가 발생했습니다.');
-        console.log('❌ Login failed:', response.data);
-      }
-    } catch (error) {
-      console.log('🔥 전체 에러 객체:', error);
-
-      let errorMessage = '네트워크 오류 또는 서버에 연결할 수 없습니다.';
-
-      if (error.response) {
-        console.log('📡 서버 응답 에러:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-        errorMessage = error.response.data?.message || `서버 오류: ${error.response.status} ${error.response.statusText}`;
-      } else if (error.request) {
-        console.log('📡 네트워크 요청 에러:', error.request);
-        errorMessage = '서버로부터 응답이 없습니다. 서버가 실행 중인지, 네트워크 연결을 확인하세요.';
-      } else {
-        console.log('⚙️ 요청 설정 에러:', error.message);
-        errorMessage = '요청 설정 중 오류가 발생했습니다: ' + error.message;
-      }
-
-      if (error.code === 'NETWORK_ERROR') {
-        errorMessage = '네트워크 연결 오류: WiFi 연결을 확인하세요.';
-      } else if (error.code === 'TIMEOUT') {
-        errorMessage = '요청 시간 초과: 서버 응답이 너무 느립니다.';
-      } else if (error.message.includes('Network Error')) {
-        errorMessage = 'CORS 또는 네트워크 오류: 서버 설정을 확인하세요.';
-      }
-
-      Alert.alert('로그인 오류', errorMessage);
-      console.error('❌ Login API error:', error);
+    if (result.success) {
+      // 사용자 정보 저장
+      await AsyncStorage.setItem('userToken', 'logged_in');
+      await AsyncStorage.setItem('userId', result.user_id.toString());
+      await AsyncStorage.setItem('userEmail', result.email);
+      
+      Alert.alert(
+        'Welcome!', 
+        'Login successful!',
+        [{
+          text: 'OK',
+          onPress: () => navigation.replace('StudentDashboard')
+        }]
+      );
+    } else {
+      Alert.alert('Login Failed', result.message || 'Invalid credentials');
     }
+
+  } catch (error) {
+    console.error('Login error:', error);
+    Alert.alert('Network Error', 'Please check your internet connection and try again');
+  }
+};
+  // 🚀 Quick Test Login Function
+  const quickTestLogin = () => {
+    setUsernameOrEmail('testuser');
+    setPassword('password');
+    
+    // Auto-login after setting credentials
+    setTimeout(() => {
+      navigation.replace('StudentDashboard');
+    }, 500);
+
+    Alert.alert('Quick Login', 'Logging in with test credentials...', [], { cancelable: false });
   };
 
-  const navigateToRegister = () => {
-    console.log('Navigate to Register Screen');
+  const handleSignUp = () => {
     navigation.navigate('Register');
   };
 
-  // 서버 연결 테스트 함수
-  const testServerConnection = async () => {
-    try {
-      console.log('🔍 서버 연결 테스트 시작...');
-      const response = await axios.get(`${FLASK_API_BASE_URL}/`, { timeout: 5000 });
-      console.log('✅ 서버 연결 성공:', response.status);
-      Alert.alert('연결 테스트', '서버 연결 성공!');
-    } catch (error) {
-      console.log('❌ 서버 연결 실패:', error.message);
-      Alert.alert('연결 테스트', `서버 연결 실패: ${error.message}`);
-    }
-  };
-
-  // 테스트용 자동 로그인 (개발 중에만 사용)
-  const quickLogin = () => {
-    setUsernameOrEmail('testuser');
-    setPassword('password');
-    Alert.alert('테스트 계정', '테스트 계정 정보가 입력되었습니다. 로그인 버튼을 누르세요.');
-  };
-
   return (
-    <View style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.keyboardContainer}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView 
-          ref={scrollViewRef}
-          contentContainerStyle={[
-            styles.scrollContainer,
-            { paddingBottom: Math.max(keyboardHeight, 50) + 100 } // 키보드 높이에 따른 동적 패딩
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          automaticallyAdjustKeyboardInsets={true}
-          keyboardDismissMode="interactive"
-        >
-          <View style={styles.content}>
-            {/* 로고 및 헤더 */}
-            <View style={styles.header}>
-              <Image
-                source={require('../assets/icon.png')}
-                style={styles.logo}
-              />
-              <Text style={styles.title}>투자 코치 📈</Text>
-              <Text style={styles.subtitle}>AI와 함께하는 스마트 투자</Text>
-            </View>
-
-            {/* Apple 심사용 테스트 버튼들 */}
-            <View style={styles.testButtonsContainer}>
-              <TouchableOpacity 
-                style={[styles.button, styles.quickLoginButton]} 
-                onPress={quickLogin}
-              >
-                <Text style={styles.buttonText}>🚀 테스트 계정으로 빠른 로그인</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.button, styles.testButton]} 
-                onPress={testServerConnection}
-              >
-                <Text style={styles.buttonText}>🔍 서버 연결 테스트</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* 로그인 폼 */}
-            <View style={styles.formContainer}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>사용자명 또는 이메일</Text>
-                <TextInput
-                  ref={usernameRef}
-                  style={[styles.input, usernameOrEmail ? styles.inputFilled : null]}
-                  placeholder="testuser 또는 이메일 주소"
-                  value={usernameOrEmail}
-                  onChangeText={setUsernameOrEmail}
-                  onFocus={() => handleInputFocus(usernameRef, '사용자명')}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  returnKeyType="next"
-                  onSubmitEditing={() => passwordRef.current?.focus()}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>비밀번호</Text>
-                <TextInput
-                  ref={passwordRef}
-                  style={[styles.input, styles.passwordInput, password ? styles.inputFilled : null]}
-                  placeholder="password (테스트용)"
-                  value={password}
-                  onChangeText={setPassword}
-                  onFocus={() => handleInputFocus(passwordRef, '비밀번호')}
-                  secureTextEntry
-                  returnKeyType="done"
-                  onSubmitEditing={handleLogin}
-                />
-              </View>
-
-              {/* 로그인 버튼 */}
-              <TouchableOpacity 
-                style={[
-                  styles.button, 
-                  styles.loginButton,
-                  (!usernameOrEmail || !password) && styles.buttonDisabled
-                ]} 
-                onPress={handleLogin}
-                disabled={!usernameOrEmail || !password}
-              >
-                <Text style={styles.buttonText}>🔑 로그인</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* 회원가입 링크 */}
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>계정이 없으신가요? </Text>
-              <TouchableOpacity onPress={navigateToRegister}>
-                <Text style={styles.linkText}>회원가입</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* 키보드 높이만큼 추가 여백 */}
-            <View style={{ height: keyboardHeight }} />
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoText}>🎓</Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+          <Text style={styles.title}>OmniEdu Global Tutor</Text>
+          <Text style={styles.subtitle}>Learn Anything, Anytime, Anywhere</Text>
+        </View>
+
+        <View style={styles.formContainer}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Username or Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter username or email"
+              placeholderTextColor="#999"
+              value={usernameOrEmail}
+              onChangeText={setUsernameOrEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter password"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableOpacity>
+
+          {/* 🚀 Quick Test Login Button - 개발/테스트용 */}
+          <TouchableOpacity 
+            style={styles.quickTestButton} 
+            onPress={quickTestLogin}
+          >
+            <Text style={styles.quickTestButtonText}>⚡ Quick Test Login</Text>
+            <Text style={styles.quickTestSubtext}>testuser / password</Text>
+          </TouchableOpacity>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity style={styles.signupButton} onPress={handleSignUp}>
+            <Text style={styles.signupButtonText}>Create New Account</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Join millions of learners worldwide with AI-powered personalized education
+          </Text>
+        </View>
+
+        {/* 개발자 노트 - 나중에 제거 */}
+        <View style={styles.devNote}>
+          <Text style={styles.devNoteText}>
+            🔧 Development Mode: Quick login enabled for testing
+          </Text>
+          <Text style={styles.devNoteSubtext}>
+            Remove this section before App Store submission
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -289,32 +177,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  keyboardContainer: {
-    flex: 1,
-  },
   scrollContainer: {
     flexGrow: 1,
-    minHeight: Dimensions.get('window').height,
-  },
-  content: {
-    flex: 1,
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingVertical: 40,
   },
   header: {
     alignItems: 'center',
     marginBottom: 40,
   },
-  logo: {
+  logoContainer: {
     width: 80,
     height: 80,
+    borderRadius: 40,
+    backgroundColor: '#4A90E2',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
   },
+  logoText: {
+    fontSize: 40,
+    color: '#fff',
+  },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
     color: '#2c3e50',
+    marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
@@ -322,87 +212,134 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     textAlign: 'center',
   },
-  testButtonsContainer: {
-    marginBottom: 30,
-  },
   formContainer: {
-    marginBottom: 30,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  inputGroup: {
-    marginBottom: 25,
+  inputContainer: {
+    marginBottom: 20,
   },
-  label: {
-    fontSize: 16,
+  inputLabel: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#2c3e50',
     marginBottom: 8,
   },
   input: {
-    width: '100%',
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#e1e8ed',
+    borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-    borderRadius: 12,
     fontSize: 16,
-    backgroundColor: '#fff',
     color: '#2c3e50',
-    minHeight: 52,
-  },
-  inputFilled: {
-    borderColor: '#3498db',
-    backgroundColor: '#f8f9ff',
-  },
-  passwordInput: {
-    borderColor: '#e74c3c', // 비밀번호 필드 강조
-    backgroundColor: '#fff5f5',
-  },
-  button: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
+    backgroundColor: '#f8f9fa',
   },
   loginButton: {
-    backgroundColor: '#2ecc71',
-    paddingVertical: 18,
+    backgroundColor: '#4A90E2',
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
   },
-  quickLoginButton: {
-    backgroundColor: '#9b59b6',
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  testButton: {
-    backgroundColor: '#3498db',
+  // 🚀 Quick Test Login Styles
+  quickTestButton: {
+    backgroundColor: '#27ae60',
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    borderWidth: 2,
+    borderColor: '#2ecc71',
   },
-  buttonDisabled: {
-    backgroundColor: '#bdc3c7',
-  },
-  buttonText: {
-    color: 'white',
+  quickTestButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  registerContainer: {
+  quickTestSubtext: {
+    color: '#fff',
+    fontSize: 12,
+    opacity: 0.9,
+    marginTop: 2,
+  },
+  divider: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e1e8ed',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: '#7f8c8d',
+    fontSize: 14,
+  },
+  signupButton: {
+    backgroundColor: '#fff',
+    height: 50,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#4A90E2',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 30,
-    paddingBottom: 50,
   },
-  registerText: {
-    fontSize: 16,
-    color: '#7f8c8d',
-  },
-  linkText: {
-    color: '#3498db',
+  signupButtonText: {
+    color: '#4A90E2',
     fontSize: 16,
     fontWeight: '600',
+  },
+  footer: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  // 개발자 노트 스타일 - 나중에 제거
+  devNote: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: '#fff3cd',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+    alignItems: 'center',
+  },
+  devNoteText: {
+    fontSize: 12,
+    color: '#856404',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  devNoteSubtext: {
+    fontSize: 11,
+    color: '#856404',
+    textAlign: 'center',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });
 

@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // AsyncSt
 
 class MobileAIAnalysisService {
   constructor() {
-    this.BASE_URL = 'https://learntoinvestai.com'; // 님의 Flask 서버 URL (Nginx/Cloudflare를 통해 접근)
+    this.BASE_URL = 'https://omnieduglobal.com'; // 님의 Flask 서버 URL (Nginx/Cloudflare를 통해 접근)
     // ❌ Gemini/OpenAI 초기화 로직 제거: 모바일 앱에서 직접 AI 호출 안 함
     // this.genAI = null;
     // this.initializeGemini();

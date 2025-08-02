@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "InvestmentCoachMobileApp_NEW",
-    "slug": "InvestmentCoachMobileApp_NEW",
+    "name": "OmniEdu Global Tutor",
+    "slug": "omnieduglobal-tutor-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,14 +17,15 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.learntoinvestai.investmentcoach"
+      "bundleIdentifier": "com.omnieduglobal.tutor"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.omnieduglobal.tutor"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,9 +34,8 @@
       "expo-secure-store"
     ],
     "extra": {
-      "eas": {
-        "projectId": "1a4a784a-4404-449f-9a19-47a0cef2e264"
-      }
+      "apiUrl": "https://omnieduglobal.com",
+      "websiteUrl": "https://omnieduglobal.com"
     }
   }
 }

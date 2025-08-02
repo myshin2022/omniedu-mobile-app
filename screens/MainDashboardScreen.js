@@ -17,7 +17,7 @@ const MainDashboardScreen = ({navigation}) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const FLASK_API_BASE_URL = 'https://learntoinvestai.com';
+  const FLASK_API_BASE_URL = 'https://omnieduglobal.com';
 
   // 포트폴리오 데이터 가져오기
   const fetchPortfolioData = async () => {

@@ -1,365 +1,442 @@
 // screens/PremiumUpgrade.js
-import React from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
+// OmniEdu Global Tutor - Apple In-App Purchase Premium Screen
+
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
   ScrollView,
-  Dimensions 
+  Alert,
+  SafeAreaView,
 } from 'react-native';
-import { useUser } from '../context/UserContext';
+import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
+const PremiumUpgrade = ({ navigation }) => {
+  const [selectedPlan, setSelectedPlan] = useState('monthly');
 
-export default function PremiumUpgrade({ navigation }) {
-  const { purchasePremium, isPremium } = useUser();
+  const plans = [
+    {
+      id: 'monthly',
+      title: 'Monthly Plan',
+      price: '$11.99',
+      period: '/month',
+      appleProductId: 'com.omniedu.premium.monthly',
+      features: [
+        'Unlimited AI Tutor Sessions',
+        'All Subject Access',
+        'Advanced Progress Analytics',
+        'Priority Support',
+        'Offline Content Access'
+      ]
+    },
+    {
+      id: 'yearly',
+      title: 'Yearly Plan',
+      price: '$89.99',
+      period: '/year',
+      savings: 'Save 37%',
+      appleProductId: 'com.omniedu.premium.yearly',
+      features: [
+        'All Monthly Features',
+        '4 Months FREE',
+        'Premium Course Library',
+        'Exclusive Study Materials',
+        'Achievement Certificates'
+      ]
+    }
+  ];
 
-  // 이미 프리미엄이면 메인으로 이동
-  if (isPremium) {
-    navigation.navigate('MainDashboard');
-    return null;
-  }
-
-  const handlePurchase = async (plan) => {
+  const handlePurchase = () => {
+    const plan = plans.find(p => p.id === selectedPlan);
     Alert.alert(
-      '🎉 구매 확인',
-      `${plan} 플랜을 구매하시겠습니까?\n\n※ 현재는 테스트 버전이므로 무료로 프리미엄 기능을 체험하실 수 있습니다!`,
+      'Subscribe to Premium',
+      `${plan.title} for ${plan.price}${plan.period}\n\nYou will be charged through your Apple ID account. Subscription automatically renews unless cancelled.`,
       [
-        { text: '취소', style: 'cancel' },
-        { 
-          text: '구매 (무료체험)', 
-          onPress: async () => {
-            await purchasePremium();
-            Alert.alert(
-              '🎉 업그레이드 완료!', 
-              '프리미엄 기능을 무제한으로 이용하실 수 있습니다!',
-              [{ 
-                text: '확인', 
-                onPress: () => navigation.navigate('MainDashboard')
-              }]
-            );
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Subscribe via App Store',
+          onPress: () => handleAppleInAppPurchase(plan)
+        }
+      ]
+    );
+  };
+
+  const handleAppleInAppPurchase = async (plan) => {
+    try {
+      // TODO: 실제 Apple In-App Purchase 구현
+      // import * as InAppPurchases from 'expo-in-app-purchases';
+
+      // 시뮬레이션: Apple 결제 프로세스
+      Alert.alert('Processing', 'Connecting to App Store...', [], { cancelable: false });
+
+      setTimeout(() => {
+        Alert.alert(
+          'Premium Activated!',
+          `Welcome to OmniEdu Premium!\n\n✅ ${plan.title} activated\n✅ All premium features unlocked\n✅ Receipt sent to your Apple ID email`,
+          [
+            {
+              text: 'Start Learning',
+              onPress: () => navigation.goBack()
+            }
+          ]
+        );
+      }, 2000);
+
+      // 실제 구현 시:
+      /*
+      const { responseCode, results } = await InAppPurchases.purchaseItemAsync(plan.appleProductId);
+      if (responseCode === InAppPurchases.IAPResponseCode.OK) {
+        // 구매 성공 처리
+        // 서버에 영수증 검증 요청
+        // 사용자 프리미엄 상태 업데이트
+      }
+      */
+    } catch (error) {
+      console.error('Apple In-App Purchase Error:', error);
+      Alert.alert('Purchase Failed', 'Unable to complete purchase. Please try again.');
+    }
+  };
+
+  const restorePurchases = () => {
+    Alert.alert(
+      'Restore Purchases',
+      'This will restore any previous premium subscriptions purchased with this Apple ID.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Restore',
+          onPress: () => {
+            // TODO: 실제 구매 복원 구현
+            Alert.alert('Restore Complete', 'Your premium subscription has been restored!');
           }
         }
       ]
     );
   };
 
-  return (
-    <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← 뒤로</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>🔓 프리미엄 업그레이드</Text>
-        <View style={{width: 50}} />
+  const viewTerms = () => {
+    Alert.alert(
+      'Terms & Privacy',
+      'By subscribing, you agree to our Terms of Service and Privacy Policy.\n\n• Payment charged to Apple ID\n• Subscription auto-renews\n• Cancel anytime in Settings\n• No refunds for partial periods',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const renderPlan = (plan) => (
+    <TouchableOpacity
+      key={plan.id}
+      style={[
+        styles.planContainer,
+        selectedPlan === plan.id && styles.selectedPlan
+      ]}
+      onPress={() => setSelectedPlan(plan.id)}
+    >
+      <View style={styles.planHeader}>
+        <Text style={styles.planTitle}>{plan.title}</Text>
+        {plan.savings && (
+          <View style={styles.savingsTag}>
+            <Text style={styles.savingsText}>{plan.savings}</Text>
+          </View>
+        )}
       </View>
 
-      <ScrollView style={styles.content}>
-        {/* 현재 제한 안내 */}
-        <View style={styles.limitNotice}>
-          <Text style={styles.limitTitle}>🚫 현재 제한사항</Text>
-          <Text style={styles.limitText}>• 월 5회 시뮬레이션 제한</Text>
-          <Text style={styles.limitText}>• 기본 성적표만 제공</Text>
-          <Text style={styles.limitText}>• 간단한 AI 코멘트만 제공</Text>
+      <View style={styles.priceContainer}>
+        <Text style={styles.price}>{plan.price}</Text>
+        <Text style={styles.period}>{plan.period}</Text>
+      </View>
+
+      <View style={styles.featuresContainer}>
+        {plan.features.map((feature, index) => (
+          <View key={index} style={styles.featureRow}>
+            <Text style={styles.checkmark}>✓</Text>
+            <Text style={styles.featureText}>{feature}</Text>
+          </View>
+        ))}
+      </View>
+
+      {selectedPlan === plan.id && (
+        <View style={styles.selectedIndicator}>
+          <Ionicons name="checkmark-circle" size={24} color="#FFA726" />
         </View>
+      )}
+    </TouchableOpacity>
+  );
 
-        {/* 프리미엄 혜택 */}
-        <View style={styles.benefitsSection}>
-          <Text style={styles.sectionTitle}>✨ 프리미엄 혜택</Text>
-          
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>🚀</Text>
-            <View style={styles.benefitContent}>
-              <Text style={styles.benefitTitle}>무제한 시뮬레이션</Text>
-              <Text style={styles.benefitDesc}>월 제한 없이 원하는 만큼 연습하세요!</Text>
-            </View>
-          </View>
-          
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>🤖</Text>
-            <View style={styles.benefitContent}>
-              <Text style={styles.benefitTitle}>고급 AI 투자 코치</Text>
-              <Text style={styles.benefitDesc}>개인화된 상세 분석과 투자 조언</Text>
-            </View>
-          </View>
-          
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>📊</Text>
-            <View style={styles.benefitContent}>
-              <Text style={styles.benefitTitle}>상세 성과 분석</Text>
-              <Text style={styles.benefitDesc}>투자 DNA 분석과 개념화 리포트</Text>
-            </View>
-          </View>
-          
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>📈</Text>
-            <View style={styles.benefitContent}>
-              <Text style={styles.benefitTitle}>실시간 데이터</Text>
-              <Text style={styles.benefitDesc}>최신 시장 데이터로 더욱 현실적인 시뮬레이션</Text>
-            </View>
-          </View>
-
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>🎯</Text>
-            <View style={styles.benefitContent}>
-              <Text style={styles.benefitTitle}>개인 맞춤 전략</Text>
-              <Text style={styles.benefitDesc}>당신만의 투자 스타일 분석과 추천</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* 요금제 */}
-        <View style={styles.plansSection}>
-          <Text style={styles.sectionTitle}>💰 요금제 선택</Text>
-          
-          {/* 월간 플랜 */}
-          <TouchableOpacity 
-            style={[styles.planCard, styles.monthlyPlan]}
-            onPress={() => handlePurchase('월간')}
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => navigation.goBack()}
           >
-            <Text style={styles.planTitle}>월간 플랜</Text>
-            <Text style={styles.planPrice}>₩9,900/월</Text>
-            <Text style={styles.planDesc}>언제든지 취소 가능</Text>
+            <Ionicons name="close" size={24} color="#7f8c8d" />
           </TouchableOpacity>
 
-          {/* 연간 플랜 (할인) */}
-          <TouchableOpacity 
-            style={[styles.planCard, styles.yearlyPlan]}
-            onPress={() => handlePurchase('연간')}
-          >
-            <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>30% 할인!</Text>
-            </View>
-            <Text style={styles.planTitle}>연간 플랜</Text>
-            <Text style={styles.planPrice}>₩83,000/년</Text>
-            <Text style={styles.planOriginalPrice}>₩118,800</Text>
-            <Text style={styles.planDesc}>월 ₩6,900 (30% 절약)</Text>
-          </TouchableOpacity>
+          <Text style={styles.title}>Upgrade to Premium</Text>
+          <Text style={styles.subtitle}>
+            Unlock unlimited learning potential with AI-powered education
+          </Text>
         </View>
 
-        {/* 7일 무료 체험 */}
-        <TouchableOpacity 
-          style={styles.freeTrialButton}
-          onPress={() => handlePurchase('7일 무료 체험')}
-        >
-          <Text style={styles.freeTrialText}>🎁 7일 무료 체험 시작</Text>
-          <Text style={styles.freeTrialSubtext}>체험 기간 중 언제든 취소 가능</Text>
+        <View style={styles.plansContainer}>
+          {plans.map(renderPlan)}
+        </View>
+
+        <TouchableOpacity style={styles.purchaseButton} onPress={handlePurchase}>
+          <Ionicons name="card" size={20} color="#fff" style={styles.buttonIcon} />
+          <Text style={styles.purchaseButtonText}>
+            Subscribe via App Store - {plans.find(p => p.id === selectedPlan)?.price}
+            {plans.find(p => p.id === selectedPlan)?.period}
+          </Text>
         </TouchableOpacity>
 
-        {/* 추천 리뷰 */}
-        <View style={styles.reviewSection}>
-          <Text style={styles.sectionTitle}>⭐ 사용자 후기</Text>
-          
-          <View style={styles.reviewCard}>
-            <Text style={styles.reviewText}>
-              "914% 수익률 달성! 프리미엄 AI 코치 덕분에 투자 실력이 늘었어요!"
-            </Text>
-            <Text style={styles.reviewAuthor}>- 투자왕김씨 ⭐⭐⭐⭐⭐</Text>
+        <View style={styles.benefitsContainer}>
+          <Text style={styles.benefitsTitle}>Why Premium?</Text>
+          <View style={styles.benefitItem}>
+            <Ionicons name="infinity" size={20} color="#FFA726" />
+            <Text style={styles.benefitText}>Unlimited AI Tutor conversations</Text>
           </View>
-
-          <View style={styles.reviewCard}>
-            <Text style={styles.reviewText}>
-              "무제한 시뮬레이션으로 다양한 전략을 테스트해볼 수 있어서 좋아요."
-            </Text>
-            <Text style={styles.reviewAuthor}>- 코스피마스터 ⭐⭐⭐⭐⭐</Text>
+          <View style={styles.benefitItem}>
+            <Ionicons name="school" size={20} color="#FFA726" />
+            <Text style={styles.benefitText}>Access to all subjects and levels</Text>
+          </View>
+          <View style={styles.benefitItem}>
+            <Ionicons name="analytics" size={20} color="#FFA726" />
+            <Text style={styles.benefitText}>Detailed learning analytics</Text>
+          </View>
+          <View style={styles.benefitItem}>
+            <Ionicons name="download" size={20} color="#FFA726" />
+            <Text style={styles.benefitText}>Offline content access</Text>
           </View>
         </View>
+
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity style={styles.restoreButton} onPress={restorePurchases}>
+            <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.termsButton} onPress={viewTerms}>
+            <Text style={styles.termsButtonText}>Terms & Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.footerInfo}>
+          <Text style={styles.footerText}>
+            🍎 Subscription managed by Apple{'\n'}
+            💳 Charged to your Apple ID account{'\n'}
+            🔄 Auto-renews until cancelled{'\n'}
+            ⚙️ Manage in iPhone Settings → Apple ID → Subscriptions
+          </Text>
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
+  scrollContent: {
+    padding: 20,
+  },
   header: {
+    alignItems: 'center',
+    marginBottom: 30,
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    padding: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  plansContainer: {
+    marginBottom: 30,
+  },
+  planContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#e1e8ed',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    position: 'relative',
+  },
+  selectedPlan: {
+    borderColor: '#FFA726',
+    backgroundColor: '#fff8f0',
+  },
+  selectedIndicator: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+  },
+  planHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    paddingTop: 50,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    marginBottom: 12,
   },
-  backButton: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  content: {
-    flex: 1,
-  },
-  limitNotice: {
-    backgroundColor: '#fff3cd',
-    margin: 20,
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ffc107',
-  },
-  limitTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#856404',
-    marginBottom: 8,
-  },
-  limitText: {
-    fontSize: 14,
-    color: '#856404',
-    marginBottom: 4,
-  },
-  benefitsSection: {
-    backgroundColor: '#fff',
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
-  },
-  sectionTitle: {
+  planTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#2c3e50',
+  },
+  savingsTag: {
+    backgroundColor: '#FFA726',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  savingsText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 16,
+  },
+  price: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFA726',
+  },
+  period: {
+    fontSize: 16,
+    color: '#7f8c8d',
+    marginLeft: 4,
+  },
+  featuresContainer: {
+    marginTop: 8,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  checkmark: {
+    color: '#27ae60',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 12,
+  },
+  featureText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#2c3e50',
+  },
+  purchaseButton: {
+    backgroundColor: '#FFA726',
+    height: 56,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
+    shadowColor: '#FFA726',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  purchaseButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  benefitsContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 20,
+  },
+  benefitsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 16,
     textAlign: 'center',
   },
   benefitItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f8f9fa',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  benefitIcon: {
-    fontSize: 24,
-    marginRight: 15,
-    marginTop: 2,
-  },
-  benefitContent: {
+  benefitText: {
     flex: 1,
-  },
-  benefitTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  benefitDesc: {
     fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
+    color: '#2c3e50',
+    marginLeft: 12,
   },
-  plansSection: {
-    paddingHorizontal: 20,
+  actionsContainer: {
+    alignItems: 'center',
     marginBottom: 20,
   },
-  planCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 15,
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-    position: 'relative',
-  },
-  monthlyPlan: {
-    borderColor: '#007AFF',
-  },
-  yearlyPlan: {
-    borderColor: '#28a745',
-    backgroundColor: '#f8fff8',
-  },
-  discountBadge: {
-    position: 'absolute',
-    top: -8,
-    right: 20,
-    backgroundColor: '#ff6b35',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  discountText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  planTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  restoreButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     marginBottom: 8,
   },
-  planPrice: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 4,
+  restoreButtonText: {
+    fontSize: 16,
+    color: '#4A90E2',
+    fontWeight: '600',
   },
-  planOriginalPrice: {
+  termsButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  termsButtonText: {
     fontSize: 14,
-    color: '#999',
-    textDecorationLine: 'line-through',
-    marginBottom: 4,
+    color: '#7f8c8d',
+    textDecorationLine: 'underline',
   },
-  planDesc: {
-    fontSize: 14,
-    color: '#666',
-  },
-  freeTrialButton: {
-    backgroundColor: '#ff6b35',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
+  footerInfo: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
     alignItems: 'center',
   },
-  freeTrialText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  freeTrialSubtext: {
-    color: '#fff',
+  footerText: {
     fontSize: 12,
-    opacity: 0.9,
-  },
-  reviewSection: {
-    backgroundColor: '#fff',
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 40,
-  },
-  reviewCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: '#007AFF',
-  },
-  reviewText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-    marginBottom: 6,
-  },
-  reviewAuthor: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
+    color: '#7f8c8d',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
+
+export default PremiumUpgrade;
