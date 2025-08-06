@@ -1,41 +1,42 @@
 {
   "expo": {
     "name": "OmniEdu Global Tutor",
-    "slug": "omnieduglobal-tutor-app",
+    "slug": "omniedu-ai-tutor-2025",
     "version": "1.0.0",
-    "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#f8f9fa"
     },
     "ios": {
+      "buildNumber": "1",
+      "icon": "./assets/icon.png",
       "supportsTablet": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.omnieduglobal.tutor"
+      "bundleIdentifier": "com.omnieduglobal.tutor2"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#f8f9fa"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.omnieduglobal.tutor"
+      "package": "com.omnieduglobal.tutor2"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "web": {},
     "plugins": [
       "expo-secure-store"
     ],
+    "owner": "mikeshin432",
     "extra": {
-      "apiUrl": "https://omnieduglobal.com",
-      "websiteUrl": "https://omnieduglobal.com"
+      "eas": {
+        "projectId": "fbc0020f-13d8-4344-a45d-a40748762db0"
+      }
     }
   }
 }
